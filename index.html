@@ -525,6 +525,7 @@
         .syntax-keyword { color: var(--color-keyword); }
         .syntax-string { color: var(--color-string); }
         .syntax-comment { color: var(--color-comment); font-style: italic; }
+        .syntax-warning { color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 2px 4px; border-radius: 3px; }
         
         /* Código inline en checklist (FIX 1) */
         .inline-code {
@@ -1011,6 +1012,57 @@ Para mostrar u ocultar elementos según una condición:
                 .replace(/'/g, '&#39;');
         }
 
+        // Extrae nombres explícitos del texto del requisito (FIX B)
+        function extraerNombres(texto) {
+            const resultados = {
+                estado: null,
+                setter: null,
+                funcion: null,
+                parametro: null,
+                mensaje: null,
+                valorInicial: null
+            };
+            
+            // Buscar patrón "llamado X" o "llamada X"
+            const llamadoMatch = texto.match(/(?:llamado|llamada)\s+["']?(\w+)["']?/i);
+            if (llamadoMatch) {
+                resultados.estado = llamadoMatch[1];
+            }
+            
+            // Buscar patrón función(parametro) ej: onAgregar(nota)
+            const funcMatch = texto.match(/(\w+)\((\w+)\)/);
+            if (funcMatch) {
+                resultados.funcion = funcMatch[1];
+                resultados.parametro = funcMatch[2];
+            }
+            
+            // Buscar texto entre comillas dobles o simples (mensaje literal)
+            const comillasDobles = texto.match(/[""]([^""]{5,})[""]/);
+            const comillasSimples = texto.match(/'([^']{5,})'/);
+            const backticks = texto.match(/`([^`]{5,})`/);
+            
+            if (comillasDobles) {
+                resultados.mensaje = comillasDobles[1];
+            } else if (comillasSimples) {
+                resultados.mensaje = comillasSimples[1];
+            } else if (backticks) {
+                resultados.mensaje = backticks[1];
+            }
+            
+            // Buscar valor inicial explícito ("inicializado en X", "valor inicial X")
+            const inicialMatch = texto.match(/(?:inicializad[ao]|valor inicial|empieza en|arranca en)\s+(?:en\s+)?["']?(\w+|null|undefined|true|false|""|'')["']?/i);
+            if (inicialMatch) {
+                resultados.valorInicial = inicialMatch[1];
+            }
+            
+            // Si hay "vacío" o "vacio" como valor inicial
+            if (texto.toLowerCase().includes('vacío') || texto.toLowerCase().includes('vacio')) {
+                resultados.valorInicial = '""';
+            }
+            
+            return resultados;
+        }
+
         // Detecta fragmentos de código en un texto (entre backticks o con símbolos <, >, {, })
         function detectarYResaltarCodigo(texto) {
             // Escapar primero todo el texto
@@ -1106,13 +1158,15 @@ Para mostrar u ocultar elementos según una condición:
         }
         
         // Función para resaltado de sintaxis simple (usada en código generado y markdown)
+        // FIX A: El escape se aplica solo a caracteres especiales DENTRO del código fuente,
+        // pero los <span> de resaltado se insertan DESPUÉS, sin escapar
         function highlightSyntax(code) {
             if (!code) return '';
             
-            // Escapar HTML primero
+            // Primero escapamos los caracteres especiales del código fuente
             let escaped = escapearHTML(code);
             
-            // Resaltar comentarios (// ...)
+            // Resaltar comentarios (// ...) - debe ir primero para no procesar contenido de comentarios
             escaped = escaped.replace(/(\/\/.*)/g, '<span class="syntax-comment">$1</span>');
             
             // Resaltar strings (entre comillas simples o dobles)
@@ -1601,9 +1655,21 @@ Para mostrar u ocultar elementos según una condición:
         }
 
         // FEATURE 2: Intentar generar código tentativo según palabras clave del sub-requisito
+        // FIX A, B, C, D: Implementados todos los fixes solicitados
         function intentarGenerarCodigo(reqTexto, btnElement) {
-            // El texto ya viene escapado desde el HTML
-            const reqOriginal = reqTexto;
+            // El texto ya viene escapado desde el HTML, pero lo necesitamos en crudo para extraer nombres
+            // Primero desescapamos para poder buscar patrones
+            const reqDesescapado = reqTexto
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, "'");
+            
+            const reqOriginal = reqDesescapado;
+            
+            // Extraer nombres explícitos usando la nueva función (FIX B)
+            const nombresExtraidos = extraerNombres(reqOriginal);
             
             // Contenedor donde mostrar el código generado
             const itemDiv = btnElement.closest('.checklist-item');
@@ -1615,77 +1681,127 @@ Para mostrar u ocultar elementos según una condición:
             
             // Detectar patrones en el texto del requisito
             const reqLower = reqOriginal.toLowerCase();
-            let codigoGenerado = '';
-            let patronesEncontrados = [];
+            let fragmentosCodigo = []; // Array de objetos {titulo, codigo} para separar bloques (FIX C)
             
-            // 1. Detectar useState
+            // Helper para obtener nombre de variable con fallback a placeholder de advertencia
+            function getVarName(contexto) {
+                if (nombresExtraidos.estado) return nombresExtraidos.estado;
+                if (nombresExtraidos.parametro) return nombresExtraidos.parametro;
+                // Si no hay nombre explícito, usar placeholder de advertencia
+                return '<span class="syntax-warning">nombreVariable</span>';
+            }
+            
+            // Helper para obtener valor inicial (FIX B punto 3)
+            function getInitialValue(defaultForText = '""') {
+                if (nombresExtraidos.valorInicial) {
+                    return nombresExtraidos.valorInicial === '""' || nombresExtraidos.valorInicial === "''" ? '""' : nombresExtraidos.valorInicial;
+                }
+                // Si el contexto sugiere input de texto, usar string vacío
+                if (reqLower.includes('input') || reqLower.includes('texto')) {
+                    return '""';
+                }
+                return defaultForText;
+            }
+            
+            // Helper para obtener mensaje literal entre comillas (FIX D)
+            function getMensajeLiteral() {
+                if (nombresExtraidos.mensaje) {
+                    return escapearHTML(nombresExtraidos.mensaje);
+                }
+                return '// completar contenido a mostrar';
+            }
+            
+            // 1. Detectar useState (FIX B: usar nombres reales)
             if (reqLower.includes('usestate') || reqLower.includes('estado') || reqLower.includes('estado local')) {
-                // Intentar extraer nombre de variable del contexto
-                const matchNombre = reqOriginal.match(/(?:variable|llamada|nombre|state)\s*["']?(\w+)["']?/i) || 
-                                   reqOriginal.match(/\b([a-z][a-zA-Z0-9]*)\s*(?:=|es)/i);
-                const varName = matchNombre ? matchNombre[1] : 'contador';
-                const setterName = 'set' + varName.charAt(0).toUpperCase() + varName.slice(1);
+                const varName = nombresExtraidos.estado || (nombresExtraidos.parametro ? nombresExtraidos.parametro : null);
+                const varNameDisplay = varName ? varName : '<span class="syntax-warning">nombreVariable</span>';
+                const setterName = varName ? 'set' + varName.charAt(0).toUpperCase() + varName.slice(1) : '<span class="syntax-warning">setNombreVariable</span>';
+                const initialValue = getInitialValue('null');
                 
-                codigoGenerado += `const [${varName}, ${setterName}] = useState(null);\n`;
-                patronesEncontrados.push('useState');
+                fragmentosCodigo.push({
+                    titulo: 'useState detectado',
+                    codigo: `const [${varNameDisplay}, ${setterName}] = useState(${initialValue});`
+                });
             }
             
             // 2. Detectar useEffect
             if (reqLower.includes('useeffect') || reqLower.includes('efecto') || reqLower.includes('side effect')) {
-                codigoGenerado += `useEffect(() => {\n    // TODO: completar la lógica\n    console.log('Efecto ejecutado');\n}, []);\n`;
-                patronesEncontrados.push('useEffect');
+                fragmentosCodigo.push({
+                    titulo: 'useEffect detectado',
+                    codigo: `useEffect(() => {\n    // TODO: completar la lógica\n    console.log('Efecto ejecutado');\n}, []);`
+                });
             }
             
-            // 3. Detectar manejadores de eventos (onChange, onClick, onSubmit, etc.)
+            // 3. Detectar manejadores de eventos (onChange, onClick, onSubmit, etc.) (FIX B: usar nombres reales)
             const eventosMatch = reqOriginal.match(/(?:onchange|onclick|onsubmit|onkeyup|onblur|onfocus)/gi);
             if (eventosMatch || reqLower.includes('manejador') || reqLower.includes('handler')) {
                 const evento = eventosMatch ? eventosMatch[0] : 'onChange';
-                const handlerName = 'handle' + evento.charAt(2).toUpperCase() + evento.slice(3);
-                codigoGenerado += `function ${handlerName}(e) {\n    // TODO: implementar lógica del ${evento}\n    console.log('${evento} disparado');\n}\n`;
-                patronesEncontrados.push('handler');
-            }
-            
-            // 4. Detectar conditional rendering (&&, ternario, if/else)
-            if (reqLower.includes('&&') || reqLower.includes('conditional') || reqLower.includes('mostrar') && reqLower.includes('ocultar')) {
-                const sampleCond = 'condicion';
-                codigoGenerado += `{${sampleCond} && <p>Contenido condicional</p>}\n`;
-                patronesEncontrados.push('conditional-and');
-            } else if (reqLower.includes('ternario') || reqLower.includes('?') || reqLower.includes('si no')) {
-                codigoGenerado += `{condicion ? <p>Opción A</p> : <p>Opción B</p>}\n`;
-                patronesEncontrados.push('ternario');
-            }
-            
-            // 5. Detectar bucles (for, forEach, map)
-            if (reqLower.includes('for') || reqLower.includes('foreach') || reqLower.includes('recorrer') || reqLower.includes('iterar')) {
-                codigoGenerado += `// Recorrer array con forEach (NUNCA usar map/filter para efectos secundarios)\narray.forEach((item) => {\n    // TODO: procesar cada item\n    console.log(item);\n});\n`;
-                patronesEncontrados.push('bucle');
-            }
-            
-            // 6. Detectar props citadas explícitamente (ej: "onAgregar(nota)")
-            const propsMatch = reqOriginal.match(/(\w+)\(([^)]+)\)/g);
-            if (propsMatch) {
-                propsMatch.forEach(propCall => {
-                    const funcName = propCall.split('(')[0];
-                    const paramName = propCall.match(/\(([^)]+)\)/)?.[1] || 'param';
-                    codigoGenerado += `// Función pasada como prop: ${funcName}(${paramName})\n${funcName}(${paramName});\n`;
+                // Si hay una función explícita citada (ej: onAgregar), usar ese nombre
+                const handlerName = nombresExtraidos.funcion || ('handle' + evento.charAt(2).toUpperCase() + evento.slice(3));
+                const paramName = nombresExtraidos.parametro || 'e';
+                
+                fragmentosCodigo.push({
+                    titulo: `Manejador de ${evento}`,
+                    codigo: `function ${handlerName}(${paramName}) {\n    // TODO: implementar lógica del ${evento}\n    console.log('${evento} disparado');\n}`
                 });
-                patronesEncontrados.push('props');
             }
             
-            // 7. Detectar return / JSX
-            if (reqLower.includes('return') || reqLower.includes('jsx') || reqLower.includes('renderizar')) {
-                codigoGenerado += `return (\n  <div className={styles.container}>\n    {/* TODO: completar JSX */}\n  </div>\n);\n`;
-                patronesEncontrados.push('jsx');
+            // 4. Detectar conditional rendering (FIX D: usar contenido real del enunciado)
+            if (reqLower.includes('&&') || reqLower.includes('conditional') || (reqLower.includes('mostrar') && reqLower.includes('ocultar'))) {
+                // Intentar detectar nombre de condición explícito
+                let condName = 'condicion';
+                const condMatch = reqOriginal.match(/(?:si|cuando|validar|verificar|chequear)\s+([a-zA-Z][a-zA-Z0-9]*)/i);
+                if (condMatch) {
+                    condName = condMatch[1];
+                }
+                const mensaje = getMensajeLiteral();
+                
+                fragmentosCodigo.push({
+                    titulo: 'Conditional rendering (&&)',
+                    codigo: `{${condName} && <p>${mensaje}</p>}`
+                });
+            } else if (reqLower.includes('ternario') || reqLower.includes('?') || reqLower.includes('si no')) {
+                const mensajeSi = getMensajeLiteral();
+                const mensajeNo = '// alternativa cuando es falso';
+                
+                fragmentosCodigo.push({
+                    titulo: 'Operador ternario',
+                    codigo: `{condicion ? <p>${mensajeSi}</p> : <p>${mensajeNo}</p>}`
+                });
             }
             
-            // 8. Detectar imports
-            if (reqLower.includes('import') || reqLower.includes('componente')) {
-                codigoGenerado += `import React from 'react';\nimport styles from './Componente.module.css';\n`;
-                patronesEncontrados.push('imports');
+            // 5. Detectar bucles (for, forEach, map) - FIX C: solo este patrón, no mezclar con otros
+            if (reqLower.includes('for') || reqLower.includes('foreach') || reqLower.includes('recorrer') || reqLower.includes('iterar')) {
+                fragmentosCodigo.push({
+                    titulo: 'Recorrido de array',
+                    codigo: `// Recorrer array con forEach (NUNCA usar map/filter para efectos secundarios)\narray.forEach((item) => {\n    // TODO: procesar cada item\n    console.log(item);\n});`
+                });
             }
+            
+            // 6. Detectar props citadas explícitamente (ej: "onAgregar(nota)") - FIX B: usar nombres exactos
+            const propsMatch = reqOriginal.match(/(\w+)\(([^)]+)\)/g);
+            if (propsMatch && nombresExtraidos.funcion) {
+                const funcName = nombresExtraidos.funcion;
+                const paramName = nombresExtraidos.parametro || 'param';
+                fragmentosCodigo.push({
+                    titulo: `Llamada a prop ${funcName}`,
+                    codigo: `${funcName}(${paramName});`
+                });
+            }
+            
+            // 7. Detectar return / JSX - solo si menciona explícitamente return o renderizar
+            if (reqLower.includes('return') || reqLower.includes('jsx')) {
+                fragmentosCodigo.push({
+                    titulo: 'Bloque return',
+                    codigo: `return (\n  <div className={styles.container}>\n    {/* TODO: completar JSX */}\n  </div>\n);`
+                });
+            }
+            
+            // 8. NO detectar imports automáticamente (FIX C): solo si el patrón es específicamente sobre importar
+            // Se eliminó la detección automática de "import" o "componente" para no generar basura
             
             // Si no se detectó ningún patrón, mostrar mensaje
-            if (patronesEncontrados.length === 0) {
+            if (fragmentosCodigo.length === 0) {
                 codeContainer.innerHTML = `
                     <div class="code-output-container" style="margin-top: 0.5rem;">
                         <p style="font-size: 0.85rem; color: var(--color-text-light); margin-bottom: 0.5rem;">
@@ -1699,15 +1815,26 @@ Para mostrar u ocultar elementos según una condición:
                 return;
             }
             
-            // Mostrar código generado con resaltado de sintaxis
-            const codigoResaltado = highlightSyntax(codigoGenerado);
+            // Construir HTML con fragmentos separados (FIX C: no mezclar patrones sin relación)
+            let htmlFragmentos = '';
+            fragmentosCodigo.forEach((fragmento, idx) => {
+                const codigoResaltado = highlightSyntax(fragmento.codigo);
+                htmlFragmentos += `
+                    <div style="margin-bottom: 1rem;">
+                        <p style="font-size: 0.75rem; color: var(--color-accent-2); margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ${fragmento.titulo}
+                        </p>
+                        <pre><code>${codigoResaltado}</code></pre>
+                    </div>
+                `;
+            });
             
             codeContainer.innerHTML = `
                 <div class="code-output-container" style="margin-top: 0.5rem;">
                     <p style="font-size: 0.8rem; color: var(--color-accent-2); margin-bottom: 0.5rem;">
                         Fragmento tentativo — revisalo y completalo con el resto de tu código
                     </p>
-                    <pre><code>${codigoResaltado}</code></pre>
+                    ${htmlFragmentos}
                     <button class="btn-copy-code" style="position: static; margin-top: 0.5rem;" onclick="copiarCodigoDesdeChecklist(this)">Copiar</button>
                 </div>
             `;
