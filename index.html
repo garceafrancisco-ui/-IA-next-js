@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pio Promedios — Ayudante DAI</title>
+    <style>
+        /* ===== ESTILOS GENERALES (Paso 6) ===== */
+        :root {
+            --color-primary: #2563eb;       /* Azul principal */
+            --color-primary-hover: #1d4ed8; /* Azul hover */
+            --color-bg: #f3f4f6;            /* Gris claro fondo */
+            --color-surface: #ffffff;       /* Blanco superficies */
+            --color-text: #1f2937;          /* Texto oscuro */
+            --color-text-light: #6b7280;    /* Texto secundario */
+            --color-border: #e5e7eb;        /* Bordes */
+            --color-error: #ef4444;         /* Rojo error */
+            --font-main: system-ui, -apple-system, sans-serif;
+            --header-height: 70px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* El scroll lo maneja el contenido principal */
+        }
+
+        /* ===== ZONA A: HEADER (Paso 2.1, 2.2) ===== */
+        header {
+            position: sticky;
+            top: 0;
+            height: var(--header-height);
+            background-color: var(--color-surface);
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .brand {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-nav {
+            padding: 0.5rem 1.5rem;
+            font-size: 1rem;
+            border: none;
+            background: transparent;
+            color: var(--color-text-light);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            min-height: 40px;
+            font-weight: 500;
+        }
+
+        .btn-nav:hover {
+            background-color: var(--color-bg);
+            color: var(--color-text);
+        }
+
+        .btn-nav.active {
+            background-color: var(--color-primary);
+            color: white;
+        }
+
+        /* ===== ZONA B: CONTENIDO PRINCIPAL (Paso 2.1) ===== */
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .view-section {
+            display: none; /* Oculto por defecto */
+            animation: fadeIn 0.3s ease;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1, h2, h3 { margin-bottom: 1rem; color: var(--color-text); }
+        p { margin-bottom: 1rem; }
+
+        /* ===== VISTA TEORÍA (Paso 2.3, 3) ===== */
+        .topics-nav {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .btn-topic {
+            padding: 0.5rem 1rem;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .btn-topic:hover { border-color: var(--color-primary); }
+        .btn-topic.active {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+
+        .search-box {
+            width: 100%;
+            max-width: 300px;
+            padding: 0.5rem;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            font-family: inherit;
+        }
+
+        .content-panel {
+            background: var(--color-surface);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        /* Estilos Markdown generado */
+        .markdown-body h1 { font-size: 2rem; border-bottom: 1px solid var(--color-border); padding-bottom: 0.5rem; }
+        .markdown-body h2 { font-size: 1.5rem; margin-top: 1.5rem; }
+        .markdown-body h3 { font-size: 1.25rem; margin-top: 1rem; }
+        .markdown-body ul { margin-left: 1.5rem; margin-bottom: 1rem; }
+        .markdown-body pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            position: relative;
+            margin: 1rem 0;
+        }
+        .markdown-body code { font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9em; }
+        .markdown-body p { margin-bottom: 1rem; }
+
+        .btn-copy-code {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .btn-copy-code:hover { background: rgba(255,255,255,0.4); }
+
+        /* ===== VISTA GENERAR CÓDIGO (Paso 4) ===== */
+        .form-group {
+            margin-bottom: 1.5rem;
+            background: var(--color-surface);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+        }
+
+        .form-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .tooltip-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            background: var(--color-text-light);
+            color: white;
+            border-radius: 50%;
+            font-size: 12px;
+            cursor: help;
+            position: relative;
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 0.5rem;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+            font-weight: normal;
+            pointer-events: none;
+        }
+
+        .tooltip-icon:hover .tooltip-text,
+        .tooltip-icon:focus .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        input[type="text"], select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        input[type="text"]:focus, select:focus, textarea:focus {
+            outline: 2px solid var(--color-primary);
+            border-color: transparent;
+        }
+
+        .help-text {
+            font-size: 0.85rem;
+            color: var(--color-text-light);
+            margin-top: 0.25rem;
+        }
+
+        .error-msg {
+            color: var(--color-error);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .input-error {
+            border-color: var(--color-error) !important;
+        }
+
+        /* Tablas dinámicas */
+        .dynamic-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.5rem;
+        }
+        .dynamic-table td { padding: 0.5rem 0; }
+        .dynamic-table input { width: 100%; margin-right: 0.5rem; }
+        .btn-remove {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            border-radius: 4px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-remove:hover { background: #fecaca; }
+
+        .btn-add {
+            background: transparent;
+            border: 1px dashed var(--color-border);
+            color: var(--color-text-light);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            width: 100%;
+            text-align: left;
+        }
+        .btn-add:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover { background-color: var(--color-primary-hover); }
+
+        .code-output-container {
+            margin-top: 2rem;
+            position: relative;
+        }
+        .code-output-container pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            max-height: 400px;
+        }
+
+        /* ===== VISTA RESOLVER TP (Paso 5) ===== */
+        .tp-textarea {
+            width: 100%;
+            height: 150px;
+            padding: 1rem;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            font-family: inherit;
+            resize: vertical;
+            margin-bottom: 1rem;
+        }
+
+        .checklist-container {
+            margin-top: 2rem;
+        }
+
+        .progress-bar {
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            background: var(--color-surface);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            border: 1px solid var(--color-border);
+        }
+
+        .checklist-item input[type="checkbox"] {
+            margin-top: 0.25rem;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checklist-text {
+            flex: 1;
+        }
+
+        .btn-theory-link {
+            background: var(--color-bg);
+            border: none;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+        .btn-theory-link:hover { text-decoration: underline; }
+
+        /* Utilidades */
+        .hidden { display: none !important; }
+
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="brand">Pio Promedios — Ayudante DAI</div>
+        <nav class="nav-buttons">
+            <button class="btn-nav active" onclick="switchView('teoria')">Teoría</button>
+            <button class="btn-nav" onclick="switchView('generar')">Generar código</button>
+            <button class="btn-nav" onclick="switchView('resolver')">Resolver TP</button>
+        </nav>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main>
+        
+        <!-- VISTA 1: TEORÍA -->
+        <section id="view-teoria" class="view-section active">
+            <div class="topics-nav" id="topicsNav">
+                <!-- Botones generados dinámicamente -->
+            </div>
+            <input type="text" class="search-box" id="topicSearch" placeholder="Buscar tema..." onkeyup="filterTopics()">
+            
+            <div class="content-panel markdown-body" id="theoryContent">
+                <!-- Contenido Markdown renderizado -->
+            </div>
+        </section>
+
+        <!-- VISTA 2: GENERAR CÓDIGO -->
+        <section id="view-generar" class="view-section">
+            <h2>Generador de Componentes React</h2>
+            <form id="generatorForm" onsubmit="event.preventDefault(); generateCode();">
+                
+                <!-- Campo 1: Tipo -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Tipo de archivo
+                        <span class="tooltip-icon">?
+                            <span class="tooltip-text">Define la estructura base. "Página" suele incluir layout.</span>
+                        </span>
+                    </label>
+                    <select id="fileType">
+                        <option value="simple">Componente simple</option>
+                        <option value="compuesto">Componente compuesto</option>
+                        <option value="page">Página</option>
+                    </select>
+                </div>
+
+                <!-- Campo 2: Nombre -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Nombre (PascalCase)
+                        <span class="tooltip-icon">?
+                            <span class="tooltip-text">Los componentes en React deben comenzar con mayúscula (ej: MiComponente).</span>
+                        </span>
+                    </label>
+                    <input type="text" id="compName" placeholder="Ej: BotonCompra">
+                    <div class="error-msg" id="error-name">El nombre es obligatorio.</div>
+                </div>
+
+                <!-- Campo 3: Props -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Props que recibe
+                        <span class="tooltip-icon">?
+                            <span class="tooltip-text">Separadas por coma. Se destructurarán en los argumentos del componente.</span>
+                        </span>
+                    </label>
+                    <input type="text" id="compProps" placeholder="Ej: onAgregar, notas, titulo">
+                    <div class="help-text">Separadas por coma, ej: onAgregar, notas</div>
+                </div>
+
+                <!-- Campo 4: Estados (useState) -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Estados (useState)
+                        <span class="tooltip-icon">?
+                            <span class="tooltip-text">Usa la sintaxis: const [nombre, setNombre] = useState(valor).</span>
+                        </span>
+                    </label>
+                    <table class="dynamic-table" id="statesTable">
+                        <!-- Filas dinámicas -->
+                    </table>
+                    <button type="button" class="btn-add" onclick="addStateRow()">+ Agregar estado</button>
+                </div>
+
+                <!-- Campo 5: useEffect -->
+                <div class="form-group">
+                    <label class="form-label" style="gap: 0.5rem;">
+                        <input type="checkbox" id="useEffectCheck" onchange="toggleUseEffectFields()"> 
+                        ¿Usa useEffect?
+                        <span class="tooltip-icon">?
+                            <span class="tooltip-text">Se ejecuta tras el render. Array vacío = solo al montar.</span>
+                        </span>
+                    </label>
+                    <div id="useEffectFields" class="hidden" style="margin-top: 1rem;">
+                        <label style="font-size: 0.9rem; font-weight: 600;">Dependencias</label>
+                        <input type="text" id="useEffectDeps" placeholder="Ej: contador (dejá vacío si es solo mount)">
+                        <div class="help-text">Vacío = solo al montar, o escribí el nombre de una variable de estado</div>
+                    </div>
+                </div>
+
+                <!-- Campo 6: Estilos -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Archivo de estilos (.module.css)
+                        <span class="tooltip-icon">?
+                            <span class="tooltip-text">Nombre del archivo CSS Module asociado.</span>
+                        </span>
+                    </label>
+                    <input type="text" id="cssFileName" placeholder="Ej: Boton.module.css">
+                    
+                    <div style="margin-top: 1rem;">
+                        <label style="font-size: 0.9rem; font-weight: 600; display:block; margin-bottom:0.5rem;">Clases CSS disponibles</label>
+                        <table class="dynamic-table" id="classesTable"></table>
+                        <button type="button" class="btn-add" onclick="addClassRow()">+ Agregar clase</button>
+                    </div>
+                </div>
+
+                <!-- Campo 7: Imports (Condicional) -->
+                <div class="form-group hidden" id="importsGroup">
+                    <label class="form-label">
+                        Componentes que importa
+                        <span class="tooltip-icon">?
+                            <span class="tooltip-text">Solo para componentes compuestos. Nombres de otros componentes.</span>
+                        </span>
+                    </label>
+                    <table class="dynamic-table" id="importsTable"></table>
+                    <button type="button" class="btn-add" onclick="addImportRow()">+ Agregar importación</button>
+                </div>
+
+                <button type="submit" class="btn-primary">Generar código</button>
+            </form>
+
+            <div class="code-output-container hidden" id="codeOutputContainer">
+                <pre><code id="codeOutput"></code></pre>
+                <button class="btn-copy-code" onclick="copyCode()">Copiar</button>
+            </div>
+        </section>
+
+        <!-- VISTA 3: RESOLVER TP -->
+        <section id="view-resolver" class="view-section">
+            <h2>Analizador de Enunciados</h2>
+            <p>Pegá el texto de tu ejercicio y detectaremos los requisitos automáticamente.</p>
+            
+            <textarea class="tp-textarea" id="tpInput" placeholder="Ej:&#10;Crear un componente Lista.&#10;a. Debe recibir un array de items.&#10;b. Debe usar useState para guardar el filtro.&#10;c. Debe tener un efecto que guarde en localStorage."></textarea>
+            
+            <button class="btn-primary" style="width: auto; padding: 0.75rem 2rem;" onclick="analyzeTP()">Analizar ejercicio</button>
+
+            <div class="checklist-container hidden" id="checklistContainer">
+                <div class="progress-bar" id="progressBar">0 de 0 resueltos</div>
+                <div id="checklistItems"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // ===== CONTENIDO: agregar nuevos temas acá típico ejemplo abajo =====
+        /*
+        EJEMPLO PARA COPIAR:
+        {
+          id: "nuevo-tema",
+          titulo: "Título del Tema",
+          contenidoMarkdown: `Texto en markdown...`,
+          reglas: [
+            { nombre: "Regla 1", ejemplo: "Codigo de ejemplo" }
+          ]
+        },
+        */
+
+        const TEMAS = [
+            {
+                id: "fundamentos",
+                titulo: "Fundamentos de Componentes",
+                contenidoMarkdown: `# Fundamentos de Componentes en React
+
+Un componente es una función de JavaScript que retorna JSX (HTML dentro de JS).
+
+## Reglas de Nomenclatura
+- Los nombres de los componentes deben escribirse en **PascalCase** (ej: \`MiComponente\`, \`Header\`).
+- Los archivos deben llamarse igual que el componente.
+
+## Props
+Las props (propiedades) son datos que se pasan de un componente padre a un hijo.
+- Se reciben como argumento en la función.
+- Se recomienda usar **destructuring** directamente en los parámetros.
+
+\`\`\`jsx
+function Saludo({ nombre, apellido }) {
+  return <h1>Hola {nombre} {apellido}</h1>;
+}
+\`\`\`
+
+## JSX Básico
+- Siempre debe haber un elemento padre (o un Fragment \`<>\`).
+- Las etiquetas deben cerrarse (ej: \`<img />\`).
+- Para poner clases CSS se usa \`className\` en lugar de \`class\`.`,
+                reglas: [
+                    { nombre: "PascalCase", ejemplo: "MiComponente" },
+                    { nombre: "Props Destructuring", ejemplo: "function Comp({ prop }) { ... }" },
+                    { nombre: "ClassName", ejemplo: "<div className='clase'></div>" }
+                ]
+            },
+            {
+                id: "hooks-estado",
+                titulo: "Manejo de Estado (useState)",
+                contenidoMarkdown: `# Manejo de Estado con useState
+
+\`useState\` es un Hook que te permite tener "memoria" en un componente funcional.
+
+## Sintaxis
+La convención estricta es usar un array con dos elementos:
+1. El valor actual del estado.
+2. La función para actualizarlo (prefijo \`set\`).
+
+\`\`\`jsx
+const [contador, setContador] = useState(0);
+\`\`\`
+
+## Reglas Importantes
+- Nunca modificar el estado directamente (ej: \`contador = 5\` ❌).
+- Siempre usar la función setter (ej: \`setContador(5)\` ✅).
+- El valor inicial puede ser cualquier tipo (number, string, object, array).`,
+                reglas: [
+                    { nombre: "Sintaxis useState", ejemplo: "const [val, setVal] = useState(inicial);" },
+                    { nombre: "Setter Prefix", ejemplo: "setNombreVariable" }
+                ]
+            },
+            {
+                id: "hooks-efectos",
+                titulo: "Efectos Secundarios (useEffect)",
+                contenidoMarkdown: `# Efectos Secundarios con useEffect
+
+\`useEffect\` permite ejecutar código side-effect (fetching, suscripciones, DOM manual) después del renderizado.
+
+## Dependencias
+El segundo argumento es el **array de dependencias**. Controla CUÁNDO se ejecuta el efecto.
+
+1. **Sin array**: Se ejecuta en CADA render (peligroso).
+2. **Array vacío \`[]\`**: Solo se ejecuta una vez al **montar** el componente.
+3. **Array con variables \`[dato]\`**: Se ejecuta al montar y cada vez que \`dato\` cambia.
+
+\`\`\`jsx
+useEffect(() => {
+  console.log("Solo al montar");
+}, []);
+\`\`\`
+
+\`\`\`jsx
+useEffect(() => {
+  console.log("Cuando cambia usuario");
+}, [usuario]);
+\`\`\``,
+                reglas: [
+                    { nombre: "Mount Only", ejemplo: "useEffect(() => { ... }, []);" },
+                    { nombre: "Dependency Change", ejemplo: "useEffect(() => { ... }, [variable]);" }
+                ]
+            },
+            {
+                id: "estilos-ui",
+                titulo: "Estilos y UI",
+                contenidoMarkdown: `# Estilos y Renderizado Condicional
+
+## CSS Modules
+Se recomienda usar archivos \`.module.css\` para evitar colisiones de nombres de clases.
+Se importan como un objeto.
+
+\`\`\`jsx
+import styles from './Boton.module.css';
+
+<button className={styles.btnPrimary}>Click</button>
+\`\`\`
+
+## Renderizado Condicional
+Para mostrar u ocultar elementos según una condición:
+
+1. **Operador Ternario**: \`condicion ? <Si /> : <No />\`
+2. **AND Lógico (\`\&\&\`)**: \`condicion && <Elemento />\` (si condicion es true, renderiza).
+
+\`\`\`jsx
+{isLoading && <Spinner />}
+{isLoggedIn ? <Dashboard /> : <Login />}
+\`\`\``,
+                reglas: [
+                    { nombre: "CSS Module Import", ejemplo: "import styles from './Archivo.module.css'" },
+                    { nombre: "Conditional Ternary", ejemplo: "{cond ? <A/> : <B/>}" },
+                    { nombre: "Conditional And", ejemplo: "{cond && <A/>}" }
+                ]
+            }
+        ];
+
+        // ===== ESTADO DE LA APP =====
+        let currentTopicIndex = 0;
+        
+        // ===== INICIALIZACIÓN =====
+        window.onload = function() {
+            renderTopicsNav();
+            loadTopic(0);
+            setupFileTypeListener();
+            
+            // Agregar una fila inicial de estado y clase por defecto
+            addStateRow();
+            addClassRow();
+        };
+
+        // ===== NAVEGACIÓN VISTAS (Paso 2.2) =====
+        function switchView(viewName) {
+            // Ocultar todas
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.btn-nav').forEach(el => el.classList.remove('active'));
+
+            // Mostrar seleccionada
+            document.getElementById(`view-${viewName}`).classList.add('active');
+            
+            // Activar botón
+            const btnIndex = viewName === 'teoria' ? 0 : viewName === 'generar' ? 1 : 2;
+            document.querySelectorAll('.btn-nav')[btnIndex].classList.add('active');
+        }
+
+        // ===== LÓGICA VISTA TEORÍA (Paso 2.3, 3) =====
+        function renderTopicsNav() {
+            const nav = document.getElementById('topicsNav');
+            nav.innerHTML = '';
+            TEMAS.forEach((tema, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-topic';
+                btn.innerText = tema.titulo;
+                btn.onclick = () => loadTopic(index);
+                btn.dataset.topicIndex = index; // Para filtrado
+                nav.appendChild(btn);
+            });
+        }
+
+        function loadTopic(index) {
+            currentTopicIndex = index;
+            const tema = TEMAS[index];
+            
+            // Actualizar botones activos
+            document.querySelectorAll('.btn-topic').forEach((btn, i) => {
+                if(i === index) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+
+            // Renderizar Markdown
+            document.getElementById('theoryContent').innerHTML = parseMarkdown(tema.contenidoMarkdown);
+            
+            // Scroll arriba
+            document.getElementById('theoryContent').scrollTop = 0;
+        }
+
+        function filterTopics() {
+            const query = document.getElementById('topicSearch').value.toLowerCase();
+            document.querySelectorAll('.btn-topic').forEach(btn => {
+                const title = btn.innerText.toLowerCase();
+                if(title.includes(query)) {
+                    btn.style.display = 'block';
+                } else {
+                    btn.style.display = 'none';
+                }
+            });
+        }
+
+        // Conversor Markdown Simple (Paso 3.1)
+        function parseMarkdown(text) {
+            let html = text;
+            
+            // Escapar HTML básico para seguridad
+            html = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+            // Code Blocks (debe ir primero para no procesar markdown adentro)
+            html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
+                return `<pre><code>${code.trim()}<button class="btn-copy-code" onclick="copyBlock(this)">Copiar</button></code></pre>`;
+            });
+
+            // Headers
+            html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+            // Listas
+            html = html.replace(/^\- (.*$)/gim, '<li>$1</li>');
+            // Envolver lis en ul (simple regex approach)
+            html = html.replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>');
+            // Limpiar uls duplicados pegados
+            html = html.replace(/<\/ul>\s*<ul>/gim, '');
+
+            // Párrafos (líneas que no son headers ni listas ni codigo)
+            // Esta es una aproximación simple
+            const lines = html.split('\n');
+            html = lines.map(line => {
+                if(line.trim() === '') return '';
+                if(line.startsWith('<')) return line; // Ya es etiqueta
+                return `<p>${line}</p>`;
+            }).join('\n');
+
+            return html;
+        }
+
+        // Copiar bloque de código específico
+        function copyBlock(btn) {
+            const code = btn.parentElement.innerText.replace('Copiar', '').trim();
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = '¡Copiado!';
+                setTimeout(() => btn.innerText = originalText, 1500);
+            });
+        }
+
+        // ===== LÓGICA VISTA GENERAR (Paso 4) =====
+        
+        function setupFileTypeListener() {
+            document.getElementById('fileType').addEventListener('change', (e) => {
+                const importsGroup = document.getElementById('importsGroup');
+                if(e.target.value === 'compuesto') {
+                    importsGroup.classList.remove('hidden');
+                } else {
+                    importsGroup.classList.add('hidden');
+                }
+            });
+        }
+
+        function toggleUseEffectFields() {
+            const checked = document.getElementById('useEffectCheck').checked;
+            const fields = document.getElementById('useEffectFields');
+            if(checked) fields.classList.remove('hidden');
+            else fields.classList.add('hidden');
+        }
+
+        // Helpers Tablas Dinámicas
+        function createTableRow(inputsConfig, removeCallback) {
+            const tr = document.createElement('tr');
+            inputsConfig.forEach(conf => {
+                const td = document.createElement('td');
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = conf.placeholder;
+                input.className = conf.className || '';
+                td.appendChild(input);
+                tr.appendChild(td);
+            });
+
+            const tdAction = document.createElement('td');
+            tdAction.style.width = '40px';
+            const btnRemove = document.createElement('button');
+            btnRemove.className = 'btn-remove';
+            btnRemove.innerHTML = '🗑';
+            btnRemove.onclick = removeCallback;
+            tdAction.appendChild(btnRemove);
+            tr.appendChild(tdAction);
+
+            return tr;
+        }
+
+        function addStateRow() {
+            const table = document.getElementById('statesTable');
+            const tr = createTableRow([
+                { placeholder: 'Variable (ej: count)', className: 'state-name' },
+                { placeholder: 'Valor Inicial (ej: 0)', className: 'state-val' }
+            ], () => tr.remove());
+            table.appendChild(tr);
+        }
+
+        function addClassRow() {
+            const table = document.getElementById('classesTable');
+            const tr = createTableRow([
+                { placeholder: 'Nombre clase (ej: container)', className: 'css-class' }
+            ], () => tr.remove());
+            table.appendChild(tr);
+        }
+
+        function addImportRow() {
+            const table = document.getElementById('importsTable');
+            const tr = createTableRow([
+                { placeholder: 'Componente (ej: Header)', className: 'import-comp' }
+            ], () => tr.remove());
+            table.appendChild(tr);
+        }
+
+        function generateCode() {
+            // Validaciones
+            const nameInput = document.getElementById('compName');
+            const name = nameInput.value.trim();
+            
+            if(!name) {
+                nameInput.classList.add('input-error');
+                document.getElementById('error-name').style.display = 'block';
+                return;
+            } else {
+                nameInput.classList.remove('input-error');
+                document.getElementById('error-name').style.display = 'none';
+            }
+
+            // Recolección de datos
+            const fileType = document.getElementById('fileType').value;
+            const propsRaw = document.getElementById('compProps').value;
+            const props = propsRaw ? propsRaw.split(',').map(p => p.trim()).filter(p => p) : [];
+            
+            // Estados
+            const states = [];
+            document.querySelectorAll('#statesTable tr').forEach(tr => {
+                const vName = tr.querySelector('.state-name').value.trim();
+                const vVal = tr.querySelector('.state-val').value.trim();
+                if(vName) states.push({ name: vName, val: vVal || "null" });
+            });
+
+            // UseEffect
+            const hasEffect = document.getElementById('useEffectCheck').checked;
+            const effectDeps = document.getElementById('useEffectDeps').value.trim();
+
+            // Clases
+            const cssClasses = [];
+            document.querySelectorAll('#classesTable tr').forEach(tr => {
+                const cName = tr.querySelector('.css-class').value.trim();
+                if(cName) cssClasses.push(cName);
+            });
+
+            // Imports
+            const imports = [];
+            document.querySelectorAll('#importsTable tr').forEach(tr => {
+                const iName = tr.querySelector('.import-comp').value.trim();
+                if(iName) imports.push(iName);
+            });
+
+            const cssFileName = document.getElementById('cssFileName').value.trim() || `${name}.module.css`;
+            const cssVarName = cssFileName.replace('.module.css', '').split('/').pop(); // Nombre simple
+
+            // CONSTRUCCIÓN DEL CÓDIGO (Siguiendo reglas de TEMAS)
+            let code = `import React, { useState`;
+            if(hasEffect) code += `, useEffect`;
+            code += ` } from 'react';\n`;
+            
+            if(fileType === 'compuesto' && imports.length > 0) {
+                imports.forEach(imp => {
+                    code += `import ${imp} from './${imp}';\n`;
+                });
+            }
+            
+            code += `import styles from './${cssFileName}';\n\n`;
+
+            // Definición Componente
+            let propsStr = props.length > 0 ? `{ ${props.join(', ')} }` : '';
+            code += `function ${name}(${propsStr}) {\n`;
+
+            // States
+            states.forEach(st => {
+                // Capitalizar primera letra para el setter
+                const setterName = 'set' + st.name.charAt(0).toUpperCase() + st.name.slice(1);
+                code += `  const [${st.name}, ${setterName}] = useState(${st.val});\n`;
+            });
+
+            // Effect
+            if(hasEffect) {
+                code += `\n  useEffect(() => {\n`;
+                code += `    // Lógica del efecto\n`;
+                code += `    console.log('Efecto ejecutado');\n`;
+                code += `  }, [${effectDeps}]);\n`;
+            }
+
+            code += `\n  return (\n`;
+            code += `    <div className={styles.container}>\n`;
+            
+            if(cssClasses.includes('title')) {
+                code += `      <h1 className={styles.title}>${name}</h1>\n`;
+            }
+            
+            // Ejemplo de renderizado condicional si hay props
+            if(props.length > 0) {
+                code += `      {/* Renderizado condicional ejemplo */}\n`;
+                code += `      {${props[0]} && <p>Dato recibido: {${props[0]}}</p>}\n`;
+            }
+
+            code += `    </div>\n`;
+            code += `  );\n`;
+            code += `}\n\n`;
+            code += `export default ${name};`;
+
+            // Mostrar resultado
+            const outputContainer = document.getElementById('codeOutputContainer');
+            const outputCode = document.getElementById('codeOutput');
+            
+            outputCode.textContent = code;
+            outputContainer.classList.remove('hidden');
+            
+            // Scroll hacia el resultado
+            outputContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyCode() {
+            const code = document.getElementById('codeOutput').textContent;
+            const btn = document.querySelector('.btn-copy-code'); // El del output grande
+            
+            // Nota: Hay dos botones copiar, uno en bloques markdown y otro aquí.
+            // Buscamos específicamente el del contenedor de output si es posible, 
+            // pero reutilizamos la lógica global si el selector es ambiguo.
+            // Para asegurar, seleccionamos por contexto:
+            const specificBtn = document.querySelector('#codeOutputContainer .btn-copy-code');
+
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = specificBtn.innerText;
+                specificBtn.innerText = '¡Copiado!';
+                setTimeout(() => specificBtn.innerText = originalText, 1500);
+            });
+        }
+
+        // ===== LÓGICA VISTA RESOLVER TP (Paso 5) =====
+        function analyzeTP() {
+            const text = document.getElementById('tpInput').value;
+            const checklistDiv = document.getElementById('checklistItems');
+            const container = document.getElementById('checklistContainer');
+            
+            checklistDiv.innerHTML = '';
+            
+            // Regex para encontrar líneas tipo "a.", "b.", "1.", etc.
+            // Busca inicio de linea (^), letra o numero, punto, espacio, resto de linea
+            const regex = /^[a-z0-9]\.\s+(.*)$/gim;
+            let match;
+            const requirements = [];
+
+            while ((match = regex.exec(text)) !== null) {
+                requirements.push(match[1]);
+            }
+
+            if(requirements.length === 0) {
+                alert("No se encontraron requisitos con formato 'a.', 'b.', etc.");
+                return;
+            }
+
+            requirements.forEach((req, idx) => {
+                const item = document.createElement('div');
+                item.className = 'checklist-item';
+                
+                // Intentar detectar palabras clave para teoría
+                const keywords = ['useState', 'useEffect', 'component', 'props', 'style', 'css', 'conditional', 'render'];
+                const foundKeyword = keywords.find(k => req.toLowerCase().includes(k));
+                
+                let theoryBtn = '';
+                if(foundKeyword) {
+                    // Buscar tema relacionado
+                    const relatedTopic = TEMAS.find(t => 
+                        t.titulo.toLowerCase().includes(foundKeyword) || 
+                        t.reglas.some(r => r.nombre.toLowerCase().includes(foundKeyword))
+                    );
+                    
+                    if(relatedTopic) {
+                        const topicIndex = TEMAS.indexOf(relatedTopic);
+                        theoryBtn = `<button class="btn-theory-link" onclick="goToTheory(${topicIndex})">Ver teoría: ${relatedTopic.titulo}</button>`;
+                    }
+                }
+
+                item.innerHTML = `
+                    <input type="checkbox" onchange="updateProgress()">
+                    <div class="checklist-text">${req}</div>
+                    ${theoryBtn}
+                `;
+                checklistDiv.appendChild(item);
+            });
+
+            container.classList.remove('hidden');
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const total = document.querySelectorAll('#checklistItems input[type="checkbox"]').length;
+            const checked = document.querySelectorAll('#checklistItems input[type="checkbox"]:checked').length;
+            document.getElementById('progressBar').innerText = `${checked} de ${total} resueltos`;
+        }
+
+        function goToTheory(topicIndex) {
+            switchView('teoria');
+            loadTopic(topicIndex);
+        }
+
+    </script>
+</body>
+</html>
