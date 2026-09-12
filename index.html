@@ -950,6 +950,7 @@ Para mostrar u ocultar elementos según una condición:
             renderTopicsNav();
             loadTopic(0);
             setupFileTypeListener();
+            setupGenerationChips();
             
             // Agregar una fila inicial de estado y clase por defecto
             addStateRow();
@@ -1072,6 +1073,66 @@ Para mostrar u ocultar elementos según una condición:
             });
         }
 
+        // ===== CONFIGURACIÓN DE CHIPS DE GENERACIÓN =====
+        let currentGenerationType = 'full';
+
+        function setupGenerationChips() {
+            const chips = document.querySelectorAll('.generation-chip');
+            chips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    // Remover active de todos
+                    chips.forEach(c => c.classList.remove('active'));
+                    // Activar el seleccionado
+                    chip.classList.add('active');
+                    // Guardar tipo actual
+                    currentGenerationType = chip.dataset.generationType;
+                    // Actualizar visibilidad de campos
+                    updateConditionalFields();
+                });
+            });
+            // Inicializar visibilidad
+            updateConditionalFields();
+        }
+
+        function updateConditionalFields() {
+            const allFields = document.querySelectorAll('.conditional-field');
+            const handlerField = document.getElementById('handlerField');
+            const conditionalField = document.getElementById('conditionalField');
+            
+            // Ocultar todos primero
+            allFields.forEach(field => {
+                field.classList.remove('visible');
+                field.style.display = 'none';
+            });
+            
+            // Mostrar según el tipo seleccionado
+            const type = currentGenerationType;
+            
+            if (type === 'full') {
+                document.querySelectorAll('[data-show-for="full jsx"]').forEach(f => { f.classList.add('visible'); f.style.display = ''; });
+                document.querySelectorAll('[data-show-for="full usestate jsx"]').forEach(f => { f.classList.add('visible'); f.style.display = ''; });
+                document.querySelectorAll('[data-show-for="full handler jsx"]').forEach(f => { f.classList.add('visible'); f.style.display = ''; });
+                document.querySelectorAll('[data-show-for="full"]').forEach(f => { f.classList.add('visible'); f.style.display = ''; });
+            } else if (type === 'usestate') {
+                document.querySelectorAll('[data-show-for="full usestate jsx"]').forEach(f => { f.classList.add('visible'); f.style.display = ''; });
+                document.querySelectorAll('[data-show-for="usestate"]').forEach(f => { f.classList.add('visible'); f.style.display = ''; });
+            } else if (type === 'useeffect') {
+                document.querySelectorAll('[data-show-for="full useeffect"]').forEach(f => { f.classList.add('visible'); f.style.display = ''; });
+            } else if (type === 'handler') {
+                handlerField.classList.add('visible');
+                handlerField.style.display = '';
+                document.querySelectorAll('[data-show-for="full handler jsx"]').forEach(f => { f.classList.add('visible'); f.style.display = ''; });
+            } else if (type === 'jsx') {
+                document.querySelectorAll('[data-show-for="full jsx"]').forEach(f => { f.classList.add('visible'); f.style.display = ''; });
+                document.querySelectorAll('[data-show-for="full usestate jsx"]').forEach(f => { f.classList.add('visible'); f.style.display = ''; });
+                document.querySelectorAll('[data-show-for="full handler jsx"]').forEach(f => { f.classList.add('visible'); f.style.display = ''; });
+            } else if (type === 'conditional') {
+                conditionalField.classList.add('visible');
+                conditionalField.style.display = '';
+                document.querySelectorAll('[data-show-for="conditional"]').forEach(f => { f.classList.add('visible'); f.style.display = ''; });
+            }
+        }
+
         function toggleUseEffectFields() {
             const checked = document.getElementById('useEffectCheck').checked;
             const fields = document.getElementById('useEffectFields');
@@ -1134,7 +1195,7 @@ Para mostrar u ocultar elementos según una condición:
             const nameInput = document.getElementById('compName');
             const name = nameInput.value.trim();
             
-            if(!name) {
+            if(!name && currentGenerationType !== 'useeffect' && currentGenerationType !== 'conditional') {
                 nameInput.classList.add('input-error');
                 document.getElementById('error-name').style.display = 'block';
                 return;
@@ -1175,64 +1236,193 @@ Para mostrar u ocultar elementos según una condición:
             });
 
             const cssFileName = document.getElementById('cssFileName').value.trim() || `${name}.module.css`;
-            const cssVarName = cssFileName.replace('.module.css', '').split('/').pop(); // Nombre simple
+            const cssVarName = cssFileName.replace('.module.css', '').split('/').pop();
 
-            // CONSTRUCCIÓN DEL CÓDIGO (Siguiendo reglas de TEMAS)
-            let code = `import React, { useState`;
-            if(hasEffect) code += `, useEffect`;
-            code += ` } from 'react';\n`;
-            
-            if(fileType === 'compuesto' && imports.length > 0) {
-                imports.forEach(imp => {
-                    code += `import ${imp} from './${imp}';\n`;
+            // Datos para handler y conditional
+            const handlerEventName = document.getElementById('handlerEventName')?.value || 'onChange';
+            const conditionalMethod = document.getElementById('conditionalMethod')?.value || 'and';
+
+            // CONSTRUCCIÓN DEL CÓDIGO SEGÚN TIPO DE GENERACIÓN
+            let code = '';
+            let explanationHTML = '';
+
+            if (currentGenerationType === 'usestate') {
+                // Generar solo useState
+                if (states.length === 0) {
+                    alert('Por favor, agregá al menos un estado en la tabla.');
+                    return;
+                }
+                states.forEach(st => {
+                    const setterName = 'set' + st.name.charAt(0).toUpperCase() + st.name.slice(1);
+                    const line = `const [${st.name}, ${setterName}] = useState(${st.val});`;
+                    code += line + '\n';
+                    explanationHTML += `<div class="explanation-line" style="border-left-color: var(--color-accent-1);">
+                        <strong>${line}</strong><br>
+                        Declara un estado llamado <code>${st.name}</code> con valor inicial <code>${st.val}</code>. 
+                        El setter <code>${setterName}</code> permite actualizarlo.
+                    </div>`;
                 });
+            } else if (currentGenerationType === 'useeffect') {
+                // Generar solo useEffect
+                const deps = effectDeps || '';
+                code = `useEffect(() => {\n    // TODO: completar la lógica adentro\n    console.log('Efecto ejecutado');\n}, [${deps}]);`;
+                explanationHTML = `<div class="explanation-line" style="border-left-color: var(--color-accent-2);">
+                    <strong>useEffect(() => {'{'} ... {'}'}, [${deps}]);</strong><br>
+                    Este hook se ejecuta cuando el componente se monta o cuando cambian las dependencias [${deps || 'vacío'}].
+                    Tenés que completar la lógica dentro del callback.
+                </div>`;
+            } else if (currentGenerationType === 'handler') {
+                // Generar solo un manejador de evento
+                const handlerName = 'handle' + handlerEventName.charAt(0).toUpperCase() + handlerEventName.slice(1).replace(/[^a-zA-Z]/g, '');
+                code = `function ${handlerName}(e) {\n    // TODO: completar la lógica del ${handlerEventName}\n    console.log('${handlerEventName} disparado');\n}`;
+                explanationHTML = `<div class="explanation-line" style="border-left-color: var(--color-accent-1);">
+                    <strong>function ${handlerName}(e) {'{'} ... {'}'}</strong><br>
+                    Esta función maneja el evento <code>${handlerEventName}</code>. 
+                    Recibe el objeto evento <code>e</code> y debe contener la lógica a ejecutar cuando el usuario interactúa.
+                </div>`;
+            } else if (currentGenerationType === 'jsx') {
+                // Generar solo el return / JSX
+                let jsxContent = 'return (\n';
+                jsxContent += '  <div className={styles.container}>\n';
+                if (cssClasses.includes('title')) {
+                    jsxContent += `    <h1 className={styles.title}>${name}</h1>\n`;
+                }
+                if (props.length > 0) {
+                    jsxContent += `    {/* Renderizado condicional ejemplo */}\n`;
+                    jsxContent += `    {${props[0]} && <p>Dato recibido: {${props[0]}}</p>}\n`;
+                }
+                if (states.length > 0) {
+                    const firstState = states[0];
+                    jsxContent += `    <p>Estado actual: {${firstState.name}}</p>\n`;
+                }
+                jsxContent += '  </div>\n';
+                jsxContent += ');';
+                code = jsxContent;
+                explanationHTML = `<div class="explanation-line" style="border-left-color: var(--color-accent-2);">
+                    <strong>return (JSX)</strong><br>
+                    Este bloque define lo que el componente renderiza en pantalla. 
+                    Usa clases CSS modularizadas (<code>styles.container</code>) y puede incluir renderizado condicional.
+                </div>`;
+            } else if (currentGenerationType === 'conditional') {
+                // Generar solo una línea de conditional rendering
+                const sampleCond = states.length > 0 ? states[0].name : 'condicion';
+                const sampleElem = '<p>Contenido condicional</p>';
+                
+                if (conditionalMethod === 'and') {
+                    code = `{${sampleCond} && ${sampleElem}}`;
+                    explanationHTML = `<div class="explanation-line" style="border-left-color: var(--color-accent-1);">
+                        <strong>{'{'}${sampleCond} && ${sampleElem}{'}'}</strong><br>
+                        Operador <code>&&</code>: si <code>${sampleCond}</code> es truthy, renderiza el elemento. 
+                        Si es falsy, no renderiza nada.
+                    </div>`;
+                } else if (conditionalMethod === 'ternary') {
+                    code = `{${sampleCond} ? ${sampleElem} : <p>Alternativa</p>}`;
+                    explanationHTML = `<div class="explanation-line" style="border-left-color: var(--color-accent-2);">
+                        <strong>{'{'}${sampleCond} ? ${sampleElem} : &lt;p&gt;Alternativa&lt;/p&gt;{'}'}</strong><br>
+                        Operador ternario: si <code>${sampleCond}</code> es truthy, muestra el primer elemento; 
+                        si no, muestra la alternativa después de los dos puntos.
+                    </div>`;
+                } else if (conditionalMethod === 'ifelse') {
+                    code = `function renderConditional() {\n  if (${sampleCond}) {\n    return ${sampleElem};\n  } else {\n    return <p>Alternativa</p>;\n  }\n}`;
+                    explanationHTML = `<div class="explanation-line" style="border-left-color: var(--color-accent-1);">
+                        <strong>Función if/else</strong><br>
+                        Una función que usa <code>if/else</code> para decidir qué retornar. 
+                        Es más legible cuando hay múltiples condiciones complejas.
+                    </div>`;
+                }
+            } else {
+                // Archivo completo (comportamiento original)
+                code = `import React, { useState`;
+                if(hasEffect) code += `, useEffect`;
+                code += ` } from 'react';\n`;
+                
+                if(fileType === 'compuesto' && imports.length > 0) {
+                    imports.forEach(imp => {
+                        code += `import ${imp} from './${imp}';\n`;
+                    });
+                }
+                
+                code += `import styles from './${cssFileName}';\n\n`;
+
+                // Definición Componente
+                let propsStr = props.length > 0 ? `{ ${props.join(', ')} }` : '';
+                code += `function ${name}(${propsStr}) {\n`;
+
+                // States
+                states.forEach(st => {
+                    const setterName = 'set' + st.name.charAt(0).toUpperCase() + st.name.slice(1);
+                    code += `  const [${st.name}, ${setterName}] = useState(${st.val});\n`;
+                });
+
+                // Effect
+                if(hasEffect) {
+                    code += `\n  useEffect(() => {\n`;
+                    code += `    // Lógica del efecto\n`;
+                    code += `    console.log('Efecto ejecutado');\n`;
+                    code += `  }, [${effectDeps}]);\n`;
+                }
+
+                code += `\n  return (\n`;
+                code += `    <div className={styles.container}>\n`;
+                
+                if(cssClasses.includes('title')) {
+                    code += `      <h1 className={styles.title}>${name}</h1>\n`;
+                }
+                
+                // Ejemplo de renderizado condicional si hay props
+                if(props.length > 0) {
+                    code += `      {/* Renderizado condicional ejemplo */}\n`;
+                    code += `      {${props[0]} && <p>Dato recibido: {${props[0]}}</p>}\n`;
+                }
+
+                code += `    </div>\n`;
+                code += `  );\n`;
+                code += `}\n\n`;
+                code += `export default ${name};`;
+
+                // Explicación para archivo completo
+                explanationHTML = `<div class="explanation-line" style="border-left-color: var(--color-accent-1);">
+                    <strong>Imports</strong><br>
+                    Importa <code>React</code>, <code>useState</code>${hasEffect ? ', <code>useEffect</code>' : ''} y los estilos CSS modulares.
+                </div>
+                <div class="explanation-line" style="border-left-color: var(--color-accent-2);">
+                    <strong>function ${name}(${propsStr})</strong><br>
+                    Define el componente funcional ${name}${props.length > 0 ? ' que recibe ' + props.join(', ') : ''} como props.
+                </div>
+                <div class="explanation-line" style="border-left-color: var(--color-accent-1);">
+                    <strong>useState hooks</strong><br>
+                    ${states.length > 0 ? 'Declara ' + states.length + ' estado(s): ' + states.map(s => s.name).join(', ') + '. Cada uno tiene su propio setter.' : 'No hay estados declarados.'}
+                </div>
+                ${hasEffect ? `<div class="explanation-line" style="border-left-color: var(--color-accent-2);">
+                    <strong>useEffect</strong><br>
+                    Efecto secundario que se ejecuta cuando cambian las dependencias [${effectDeps || 'vacío'}].
+                </div>` : ''}
+                <div class="explanation-line" style="border-left-color: var(--color-accent-1);">
+                    <strong>return (JSX)</strong><br>
+                    Lo que se renderiza en pantalla: un div con clase <code>container</code>${cssClasses.includes('title') ? ', un título' : ''}${props.length > 0 ? ' y renderizado condicional basado en props' : ''}.
+                </div>
+                <div class="explanation-line" style="border-left-color: var(--color-accent-2);">
+                    <strong>export default ${name}</strong><br>
+                    Exporta el componente para que pueda ser importado en otros archivos.
+                </div>`;
             }
-            
-            code += `import styles from './${cssFileName}';\n\n`;
-
-            // Definición Componente
-            let propsStr = props.length > 0 ? `{ ${props.join(', ')} }` : '';
-            code += `function ${name}(${propsStr}) {\n`;
-
-            // States
-            states.forEach(st => {
-                // Capitalizar primera letra para el setter
-                const setterName = 'set' + st.name.charAt(0).toUpperCase() + st.name.slice(1);
-                code += `  const [${st.name}, ${setterName}] = useState(${st.val});\n`;
-            });
-
-            // Effect
-            if(hasEffect) {
-                code += `\n  useEffect(() => {\n`;
-                code += `    // Lógica del efecto\n`;
-                code += `    console.log('Efecto ejecutado');\n`;
-                code += `  }, [${effectDeps}]);\n`;
-            }
-
-            code += `\n  return (\n`;
-            code += `    <div className={styles.container}>\n`;
-            
-            if(cssClasses.includes('title')) {
-                code += `      <h1 className={styles.title}>${name}</h1>\n`;
-            }
-            
-            // Ejemplo de renderizado condicional si hay props
-            if(props.length > 0) {
-                code += `      {/* Renderizado condicional ejemplo */}\n`;
-                code += `      {${props[0]} && <p>Dato recibido: {${props[0]}}</p>}\n`;
-            }
-
-            code += `    </div>\n`;
-            code += `  );\n`;
-            code += `}\n\n`;
-            code += `export default ${name};`;
 
             // Mostrar resultado
             const outputContainer = document.getElementById('codeOutputContainer');
             const outputCode = document.getElementById('codeOutput');
+            const explanationContainer = document.getElementById('explanationContainer');
+            const explanationLines = document.getElementById('explanationLines');
             
             outputCode.textContent = code;
             outputContainer.classList.remove('hidden');
+            
+            // Actualizar explicación
+            if (explanationHTML) {
+                explanationLines.innerHTML = explanationHTML;
+                explanationContainer.classList.remove('hidden');
+            } else {
+                explanationContainer.classList.add('hidden');
+            }
             
             // Scroll hacia el resultado
             outputContainer.scrollIntoView({ behavior: 'smooth' });
