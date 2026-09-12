@@ -5,18 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pio Promedios — Ayudante DAI</title>
     <style>
-        /* ===== ESTILOS GENERALES (Paso 6) ===== */
+        /* ===== ESTILOS GENERALES - TEMA OSCURO / NEÓN ===== */
         :root {
-            --color-primary: #2563eb;       /* Azul principal */
-            --color-primary-hover: #1d4ed8; /* Azul hover */
-            --color-bg: #f3f4f6;            /* Gris claro fondo */
-            --color-surface: #ffffff;       /* Blanco superficies */
-            --color-text: #1f2937;          /* Texto oscuro */
-            --color-text-light: #6b7280;    /* Texto secundario */
-            --color-border: #e5e7eb;        /* Bordes */
-            --color-error: #ef4444;         /* Rojo error */
+            --color-bg: #0f0f14;                  /* Fondo general - gris muy oscuro */
+            --color-surface: #1a1a24;             /* Paneles/tarjetas - gris oscuro */
+            --color-text: #e8e8f0;                /* Texto principal - blanco roto */
+            --color-text-light: #9ca3af;          /* Texto secundario - gris claro */
+            --color-border: #2d2d3a;              /* Bordes sutiles */
+            --color-accent-1: #06b6d4;            /* Cian/Turquesa neón (acento principal) */
+            --color-accent-2: #d946ef;            /* Magenta/Violeta neón (acento secundario) */
+            --color-error: #f43f5e;               /* Rosa/Rojo neón para errores */
+            --color-keyword: #d946ef;             /* Palabras clave (magenta) */
+            --color-string: #22c55e;              /* Strings (verde neón) */
+            --color-comment: #64748b;             /* Comentarios (gris azulado) */
             --font-main: system-ui, -apple-system, sans-serif;
             --header-height: 70px;
+            --glow-accent-1: 0 0 8px rgba(6, 182, 212, 0.5);
+            --glow-accent-2: 0 0 8px rgba(217, 70, 239, 0.5);
+            --glow-error: 0 0 8px rgba(244, 63, 94, 0.5);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -29,10 +35,10 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* El scroll lo maneja el contenido principal */
+            overflow: hidden;
         }
 
-        /* ===== ZONA A: HEADER (Paso 2.1, 2.2) ===== */
+        /* ===== ZONA A: HEADER ===== */
         header {
             position: sticky;
             top: 0;
@@ -44,13 +50,14 @@
             justify-content: space-between;
             padding: 0 2rem;
             z-index: 100;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
 
         .brand {
             font-size: 1.25rem;
             font-weight: 700;
-            color: var(--color-primary);
+            color: var(--color-accent-1);
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
         }
 
         .nav-buttons {
@@ -61,7 +68,7 @@
         .btn-nav {
             padding: 0.5rem 1.5rem;
             font-size: 1rem;
-            border: none;
+            border: 1px solid transparent;
             background: transparent;
             color: var(--color-text-light);
             cursor: pointer;
@@ -72,16 +79,21 @@
         }
 
         .btn-nav:hover {
-            background-color: var(--color-bg);
-            color: var(--color-text);
+            background-color: rgba(6, 182, 212, 0.1);
+            color: var(--color-accent-1);
+            border-color: var(--color-accent-1);
+            box-shadow: var(--glow-accent-1);
         }
 
         .btn-nav.active {
-            background-color: var(--color-primary);
-            color: white;
+            background-color: var(--color-accent-1);
+            color: #0f0f14;
+            border-color: var(--color-accent-1);
+            box-shadow: var(--glow-accent-1);
+            font-weight: 600;
         }
 
-        /* ===== ZONA B: CONTENIDO PRINCIPAL (Paso 2.1) ===== */
+        /* ===== ZONA B: CONTENIDO PRINCIPAL ===== */
         main {
             flex: 1;
             overflow-y: auto;
@@ -92,7 +104,7 @@
         }
 
         .view-section {
-            display: none; /* Oculto por defecto */
+            display: none;
             animation: fadeIn 0.3s ease;
         }
 
@@ -105,10 +117,19 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        h1, h2, h3 { margin-bottom: 1rem; color: var(--color-text); }
+        h1, h2, h3 { 
+            margin-bottom: 1rem; 
+            color: var(--color-text);
+        }
+        
+        h2 {
+            color: var(--color-accent-2);
+            text-shadow: 0 0 8px rgba(217, 70, 239, 0.2);
+        }
+
         p { margin-bottom: 1rem; }
 
-        /* ===== VISTA TEORÍA (Paso 2.3, 3) ===== */
+        /* ===== VISTA TEORÍA ===== */
         .topics-nav {
             display: flex;
             gap: 0.5rem;
@@ -126,13 +147,20 @@
             cursor: pointer;
             font-size: 0.9rem;
             transition: all 0.2s;
+            color: var(--color-text-light);
         }
 
-        .btn-topic:hover { border-color: var(--color-primary); }
+        .btn-topic:hover { 
+            border-color: var(--color-accent-1); 
+            color: var(--color-accent-1);
+            box-shadow: var(--glow-accent-1);
+        }
         .btn-topic.active {
-            background: var(--color-primary);
-            color: white;
-            border-color: var(--color-primary);
+            background: var(--color-accent-1);
+            color: #0f0f14;
+            border-color: var(--color-accent-1);
+            box-shadow: var(--glow-accent-1);
+            font-weight: 600;
         }
 
         .search-box {
@@ -143,49 +171,73 @@
             border-radius: 6px;
             margin-bottom: 1.5rem;
             font-family: inherit;
+            background: var(--color-surface);
+            color: var(--color-text);
+        }
+        
+        .search-box:focus {
+            outline: 2px solid var(--color-accent-1);
+            border-color: transparent;
+            box-shadow: var(--glow-accent-1);
         }
 
         .content-panel {
             background: var(--color-surface);
             padding: 2rem;
             border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            border: 1px solid var(--color-border);
             max-height: 70vh;
             overflow-y: auto;
         }
 
         /* Estilos Markdown generado */
-        .markdown-body h1 { font-size: 2rem; border-bottom: 1px solid var(--color-border); padding-bottom: 0.5rem; }
-        .markdown-body h2 { font-size: 1.5rem; margin-top: 1.5rem; }
-        .markdown-body h3 { font-size: 1.25rem; margin-top: 1rem; }
+        .markdown-body h1 { 
+            font-size: 2rem; 
+            border-bottom: 1px solid var(--color-border); 
+            padding-bottom: 0.5rem; 
+            color: var(--color-accent-1);
+        }
+        .markdown-body h2 { 
+            font-size: 1.5rem; 
+            margin-top: 1.5rem; 
+            color: var(--color-accent-2);
+        }
+        .markdown-body h3 { font-size: 1.25rem; margin-top: 1rem; color: var(--color-text); }
         .markdown-body ul { margin-left: 1.5rem; margin-bottom: 1rem; }
         .markdown-body pre {
-            background: #1e1e1e;
-            color: #d4d4d4;
+            background: #0d0d12;
+            color: #e8e8f0;
             padding: 1rem;
             border-radius: 6px;
             overflow-x: auto;
             position: relative;
             margin: 1rem 0;
+            border: 1px solid var(--color-border);
         }
         .markdown-body code { font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9em; }
-        .markdown-body p { margin-bottom: 1rem; }
+        .markdown-body p { margin-bottom: 1rem; color: var(--color-text-light); }
 
         .btn-copy-code {
             position: absolute;
             top: 0.5rem;
             right: 0.5rem;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: none;
+            background: rgba(6, 182, 212, 0.2);
+            color: var(--color-accent-1);
+            border: 1px solid var(--color-accent-1);
             padding: 0.25rem 0.5rem;
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.8rem;
+            transition: all 0.2s;
         }
-        .btn-copy-code:hover { background: rgba(255,255,255,0.4); }
+        .btn-copy-code:hover { 
+            background: var(--color-accent-1); 
+            color: #0f0f14;
+            box-shadow: var(--glow-accent-1);
+        }
 
-        /* ===== VISTA GENERAR CÓDIGO (Paso 4) ===== */
+        /* ===== VISTA GENERAR CÓDIGO ===== */
         .form-group {
             margin-bottom: 1.5rem;
             background: var(--color-surface);
@@ -201,6 +253,7 @@
             margin-bottom: 0.5rem;
             font-weight: 600;
             font-size: 0.95rem;
+            color: var(--color-accent-1);
         }
 
         .tooltip-icon {
@@ -209,19 +262,24 @@
             justify-content: center;
             width: 18px;
             height: 18px;
-            background: var(--color-text-light);
-            color: white;
+            background: var(--color-accent-2);
+            color: #0f0f14;
             border-radius: 50%;
             font-size: 12px;
             cursor: help;
             position: relative;
+            transition: all 0.2s;
+        }
+        
+        .tooltip-icon:hover {
+            box-shadow: var(--glow-accent-2);
         }
 
         .tooltip-text {
             visibility: hidden;
             width: 200px;
-            background-color: #333;
-            color: #fff;
+            background-color: var(--color-surface);
+            color: var(--color-text);
             text-align: center;
             border-radius: 6px;
             padding: 0.5rem;
@@ -235,6 +293,7 @@
             font-size: 0.8rem;
             font-weight: normal;
             pointer-events: none;
+            border: 1px solid var(--color-border);
         }
 
         .tooltip-icon:hover .tooltip-text,
@@ -250,11 +309,14 @@
             border-radius: 6px;
             font-family: inherit;
             font-size: 1rem;
+            background: var(--color-bg);
+            color: var(--color-text);
         }
 
         input[type="text"]:focus, select:focus, textarea:focus {
-            outline: 2px solid var(--color-primary);
+            outline: 2px solid var(--color-accent-1);
             border-color: transparent;
+            box-shadow: var(--glow-accent-1);
         }
 
         .help-text {
@@ -268,10 +330,12 @@
             font-size: 0.85rem;
             margin-top: 0.25rem;
             display: none;
+            text-shadow: var(--glow-error);
         }
 
         .input-error {
             border-color: var(--color-error) !important;
+            box-shadow: var(--glow-error);
         }
 
         /* Tablas dinámicas */
@@ -283,16 +347,21 @@
         .dynamic-table td { padding: 0.5rem 0; }
         .dynamic-table input { width: 100%; margin-right: 0.5rem; }
         .btn-remove {
-            background: #fee2e2;
-            color: #ef4444;
-            border: none;
+            background: rgba(244, 63, 94, 0.2);
+            color: var(--color-error);
+            border: 1px solid var(--color-error);
             border-radius: 4px;
             width: 30px;
             height: 30px;
             cursor: pointer;
             font-weight: bold;
+            transition: all 0.2s;
         }
-        .btn-remove:hover { background: #fecaca; }
+        .btn-remove:hover { 
+            background: var(--color-error); 
+            color: #0f0f14;
+            box-shadow: var(--glow-error);
+        }
 
         .btn-add {
             background: transparent;
@@ -304,12 +373,17 @@
             margin-top: 0.5rem;
             width: 100%;
             text-align: left;
+            transition: all 0.2s;
         }
-        .btn-add:hover { border-color: var(--color-primary); color: var(--color-primary); }
+        .btn-add:hover { 
+            border-color: var(--color-accent-1); 
+            color: var(--color-accent-1);
+            box-shadow: var(--glow-accent-1);
+        }
 
         .btn-primary {
-            background-color: var(--color-primary);
-            color: white;
+            background-color: var(--color-accent-1);
+            color: #0f0f14;
             border: none;
             padding: 1rem;
             border-radius: 8px;
@@ -318,24 +392,141 @@
             cursor: pointer;
             width: 100%;
             margin-top: 1rem;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
-        .btn-primary:hover { background-color: var(--color-primary-hover); }
+        .btn-primary:hover { 
+            background-color: var(--color-accent-1);
+            box-shadow: var(--glow-accent-1);
+        }
+
+        /* Selector de generación por partes (CAMBIO 1) */
+        .generation-selector-container {
+            margin-bottom: 1.5rem;
+            background: var(--color-surface);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+        }
+        
+        .generation-selector-label {
+            display: block;
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--color-accent-2);
+            margin-bottom: 0.75rem;
+        }
+        
+        .generation-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .generation-chip {
+            padding: 0.5rem 1rem;
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--color-text-light);
+            transition: all 0.2s;
+        }
+        
+        .generation-chip:hover {
+            border-color: var(--color-accent-1);
+            color: var(--color-accent-1);
+        }
+        
+        .generation-chip.active {
+            background: var(--color-accent-2);
+            color: #0f0f14;
+            border-color: var(--color-accent-2);
+            box-shadow: var(--glow-accent-2);
+            font-weight: 600;
+        }
+        
+        /* Campos condicionales según tipo de generación */
+        .conditional-field {
+            display: none;
+        }
+        
+        .conditional-field.visible {
+            display: block;
+        }
 
         .code-output-container {
             margin-top: 2rem;
             position: relative;
         }
+        
         .code-output-container pre {
-            background: #1e1e1e;
-            color: #d4d4d4;
+            background: #0d0d12;
+            color: #e8e8f0;
             padding: 1.5rem;
             border-radius: 8px;
             overflow-x: auto;
             max-height: 400px;
+            border: 1px solid var(--color-border);
         }
+        
+        /* Explicación del código generado (CAMBIO 3) */
+        .explanation-container {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--color-surface);
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+        }
+        
+        .explanation-title {
+            font-weight: 600;
+            color: var(--color-accent-2);
+            margin-bottom: 0.75rem;
+        }
+        
+        .explanation-line {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid;
+            background: rgba(26, 26, 36, 0.5);
+            font-size: 0.9rem;
+            color: var(--color-text-light);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .explanation-line:hover {
+            background: rgba(6, 182, 212, 0.1);
+        }
+        
+        .code-line {
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        
+        .code-line:hover {
+            background: rgba(217, 70, 239, 0.2);
+        }
+        
+        .code-line.highlighted {
+            background: rgba(217, 70, 239, 0.3);
+            border-radius: 4px;
+        }
+        
+        /* Colores de borde para líneas alternadas */
+        .border-color-1 { border-left-color: var(--color-accent-1); }
+        .border-color-2 { border-left-color: var(--color-accent-2); }
+        .border-color-3 { border-left-color: var(--color-string); }
+        
+        /* Highlighting de sintaxis simple */
+        .syntax-keyword { color: var(--color-keyword); }
+        .syntax-string { color: var(--color-string); }
+        .syntax-comment { color: var(--color-comment); font-style: italic; }
 
-        /* ===== VISTA RESOLVER TP (Paso 5) ===== */
+        /* ===== VISTA RESOLVER TP ===== */
         .tp-textarea {
             width: 100%;
             height: 150px;
@@ -345,6 +536,14 @@
             font-family: inherit;
             resize: vertical;
             margin-bottom: 1rem;
+            background: var(--color-surface);
+            color: var(--color-text);
+        }
+        
+        .tp-textarea:focus {
+            outline: 2px solid var(--color-accent-1);
+            border-color: transparent;
+            box-shadow: var(--glow-accent-1);
         }
 
         .checklist-container {
@@ -354,7 +553,8 @@
         .progress-bar {
             margin-bottom: 1rem;
             font-weight: 600;
-            color: var(--color-primary);
+            color: var(--color-accent-1);
+            text-shadow: var(--glow-accent-1);
         }
 
         .checklist-item {
@@ -366,6 +566,11 @@
             border-radius: 8px;
             margin-bottom: 0.5rem;
             border: 1px solid var(--color-border);
+            transition: all 0.2s;
+        }
+        
+        .checklist-item:hover {
+            border-color: var(--color-accent-1);
         }
 
         .checklist-item input[type="checkbox"] {
@@ -373,23 +578,38 @@
             width: 18px;
             height: 18px;
             cursor: pointer;
+            accent-color: var(--color-accent-1);
         }
 
         .checklist-text {
             flex: 1;
         }
+        
+        /* Explicación en criollo para cada ítem (CAMBIO 3) */
+        .checklist-criollo {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--color-accent-1);
+            margin-top: 0.25rem;
+            font-style: italic;
+        }
 
         .btn-theory-link {
-            background: var(--color-bg);
-            border: none;
+            background: var(--color-surface);
+            border: 1px solid var(--color-accent-2);
             padding: 0.25rem 0.75rem;
             border-radius: 4px;
             font-size: 0.8rem;
             cursor: pointer;
-            color: var(--color-primary);
+            color: var(--color-accent-2);
             font-weight: 600;
+            transition: all 0.2s;
         }
-        .btn-theory-link:hover { text-decoration: underline; }
+        .btn-theory-link:hover { 
+            background: var(--color-accent-2);
+            color: #0f0f14;
+            box-shadow: var(--glow-accent-2);
+        }
 
         /* Utilidades */
         .hidden { display: none !important; }
@@ -426,10 +646,39 @@
         <!-- VISTA 2: GENERAR CÓDIGO -->
         <section id="view-generar" class="view-section">
             <h2>Generador de Componentes React</h2>
+            
+            <!-- CAMBIO 1: Selector de qué generar (ARRIBA de todo) -->
+            <div class="generation-selector-container">
+                <label class="generation-selector-label">¿Qué querés generar?</label>
+                <div class="generation-chips">
+                    <div class="generation-chip active" data-generation-type="full">Archivo completo</div>
+                    <div class="generation-chip" data-generation-type="usestate">Solo el useState</div>
+                    <div class="generation-chip" data-generation-type="useeffect">Solo el useEffect</div>
+                    <div class="generation-chip" data-generation-type="handler">Solo un manejador de evento</div>
+                    <div class="generation-chip" data-generation-type="jsx">Solo el return / JSX</div>
+                    <div class="generation-chip" data-generation-type="conditional">Solo conditional rendering</div>
+                </div>
+            </div>
+            
+            <!-- Campos adicionales según tipo de generación -->
+            <div id="handlerField" class="form-group conditional-field">
+                <label class="form-label">Nombre del evento (ej: onChange, onClick)</label>
+                <input type="text" id="handlerEventName" placeholder="Ej: onChange">
+            </div>
+            
+            <div id="conditionalField" class="form-group conditional-field">
+                <label class="form-label">Método de conditional rendering</label>
+                <select id="conditionalMethod">
+                    <option value="and">Operador && (cond && elemento)</option>
+                    <option value="ternary">Ternario (cond ? verdadero : falso)</option>
+                    <option value="ifelse">Función if/else</option>
+                </select>
+            </div>
+            
             <form id="generatorForm" onsubmit="event.preventDefault(); generateCode();">
-                
+
                 <!-- Campo 1: Tipo -->
-                <div class="form-group">
+                <div class="form-group conditional-field visible" data-show-for="full jsx">
                     <label class="form-label">
                         Tipo de archivo
                         <span class="tooltip-icon">?
@@ -444,7 +693,7 @@
                 </div>
 
                 <!-- Campo 2: Nombre -->
-                <div class="form-group">
+                <div class="form-group conditional-field visible" data-show-for="full handler jsx">
                     <label class="form-label">
                         Nombre (PascalCase)
                         <span class="tooltip-icon">?
@@ -456,7 +705,7 @@
                 </div>
 
                 <!-- Campo 3: Props -->
-                <div class="form-group">
+                <div class="form-group conditional-field visible" data-show-for="full jsx">
                     <label class="form-label">
                         Props que recibe
                         <span class="tooltip-icon">?
@@ -468,7 +717,7 @@
                 </div>
 
                 <!-- Campo 4: Estados (useState) -->
-                <div class="form-group">
+                <div class="form-group conditional-field visible" data-show-for="full usestate jsx">
                     <label class="form-label">
                         Estados (useState)
                         <span class="tooltip-icon">?
@@ -482,7 +731,7 @@
                 </div>
 
                 <!-- Campo 5: useEffect -->
-                <div class="form-group">
+                <div class="form-group conditional-field visible" data-show-for="full useeffect">
                     <label class="form-label" style="gap: 0.5rem;">
                         <input type="checkbox" id="useEffectCheck" onchange="toggleUseEffectFields()"> 
                         ¿Usa useEffect?
@@ -498,7 +747,7 @@
                 </div>
 
                 <!-- Campo 6: Estilos -->
-                <div class="form-group">
+                <div class="form-group conditional-field visible" data-show-for="full jsx">
                     <label class="form-label">
                         Archivo de estilos (.module.css)
                         <span class="tooltip-icon">?
@@ -506,7 +755,7 @@
                         </span>
                     </label>
                     <input type="text" id="cssFileName" placeholder="Ej: Boton.module.css">
-                    
+
                     <div style="margin-top: 1rem;">
                         <label style="font-size: 0.9rem; font-weight: 600; display:block; margin-bottom:0.5rem;">Clases CSS disponibles</label>
                         <table class="dynamic-table" id="classesTable"></table>
@@ -515,7 +764,7 @@
                 </div>
 
                 <!-- Campo 7: Imports (Condicional) -->
-                <div class="form-group hidden" id="importsGroup">
+                <div class="form-group hidden conditional-field" id="importsGroup" data-show-for="full">
                     <label class="form-label">
                         Componentes que importa
                         <span class="tooltip-icon">?
@@ -532,6 +781,12 @@
             <div class="code-output-container hidden" id="codeOutputContainer">
                 <pre><code id="codeOutput"></code></pre>
                 <button class="btn-copy-code" onclick="copyCode()">Copiar</button>
+            </div>
+            
+            <!-- Explicación del código generado (CAMBIO 3) -->
+            <div class="explanation-container hidden" id="explanationContainer">
+                <div class="explanation-title">Explicación</div>
+                <div id="explanationLines"></div>
             </div>
         </section>
 
