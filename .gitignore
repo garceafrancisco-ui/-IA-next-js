@@ -1,2 +1,3 @@
+Nothing needs to be added to .gitignore since only a markdown file (README-componentes-compuestos.md) was added, which is a source/config file and should not be ignored.
 Nothing needs to be added to the .gitignore file based on the provided changes. The only file added is README-hooks.md, which is a documentation file that should not be ignored.
 Nothing needs to be added to .gitignore since the changes only include a markdown documentation file (README-componentes-basicos.md) which is a source/config file and should not be ignored.
