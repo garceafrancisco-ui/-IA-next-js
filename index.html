@@ -525,6 +525,35 @@
         .syntax-keyword { color: var(--color-keyword); }
         .syntax-string { color: var(--color-string); }
         .syntax-comment { color: var(--color-comment); font-style: italic; }
+        
+        /* Código inline en checklist (FIX 1) */
+        .inline-code {
+            background: rgba(6, 182, 212, 0.1);
+            padding: 0.1rem 0.3rem;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            color: var(--color-accent-1);
+        }
+
+        /* Botón "Intentar generar código" (FEATURE 2) */
+        .btn-generate-code {
+            background: transparent;
+            border: 1px solid var(--color-accent-2);
+            color: var(--color-accent-2);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+            transition: all 0.2s;
+        }
+        
+        .btn-generate-code:hover {
+            background: var(--color-accent-2);
+            color: #0f0f14;
+            box-shadow: var(--glow-accent-2);
+        }
 
         /* ===== VISTA RESOLVER TP ===== */
         .tp-textarea {
@@ -971,6 +1000,32 @@ Para mostrar u ocultar elementos según una condición:
             document.querySelectorAll('.btn-nav')[btnIndex].classList.add('active');
         }
 
+        // ===== UTILIDADES =====
+        function escapearHTML(texto) {
+            if (!texto) return '';
+            return texto
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // Detecta fragmentos de código en un texto (entre backticks o con símbolos <, >, {, })
+        function detectarYResaltarCodigo(texto) {
+            // Escapar primero todo el texto
+            let escapado = escapearHTML(texto);
+            
+            // Buscar patrones que parezcan código: palabras con paréntesis, tags HTML, etc.
+            // Reemplazar backticks y contenido entre ellos con <code>
+            escapado = escapado.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+            
+            // También detectar tags HTML escritos como texto (ej: &lt;input&gt;) y envolverlos en <code>
+            escapado = escapado.replace(/(&lt;[^&]+&gt;)/g, '<code class="inline-code">$1</code>');
+            
+            return escapado;
+        }
+
         // ===== LÓGICA VISTA TEORÍA (Paso 2.3, 3) =====
         function renderTopicsNav() {
             const nav = document.getElementById('topicsNav');
@@ -1023,7 +1078,7 @@ Para mostrar u ocultar elementos según una condición:
 
             // Code Blocks (debe ir primero para no procesar markdown adentro)
             html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
-                return `<pre><code>${code.trim()}<button class="btn-copy-code" onclick="copyBlock(this)">Copiar</button></code></pre>`;
+                return `<pre><code>${highlightSyntax(code.trim())}<button class="btn-copy-code" onclick="copyBlock(this)">Copiar</button></code></pre>`;
             });
 
             // Headers
@@ -1048,6 +1103,32 @@ Para mostrar u ocultar elementos según una condición:
             }).join('\n');
 
             return html;
+        }
+        
+        // Función para resaltado de sintaxis simple (usada en código generado y markdown)
+        function highlightSyntax(code) {
+            if (!code) return '';
+            
+            // Escapar HTML primero
+            let escaped = escapearHTML(code);
+            
+            // Resaltar comentarios (// ...)
+            escaped = escaped.replace(/(\/\/.*)/g, '<span class="syntax-comment">$1</span>');
+            
+            // Resaltar strings (entre comillas simples o dobles)
+            escaped = escaped.replace(/(&quot;[^&]*?&quot;|&#39;[^&]*?&#39;)/g, '<span class="syntax-string">$1</span>');
+            
+            // Resaltar palabras clave
+            const keywords = ['const', 'let', 'var', 'function', 'return', 'import', 'from', 'export', 'default', 'if', 'else', 'for', 'while', 'switch', 'case', 'break', 'continue', 'try', 'catch', 'finally', 'throw', 'new', 'typeof', 'instanceof', 'in', 'of', 'async', 'await', 'class', 'extends', 'super', 'this', 'null', 'undefined', 'true', 'false'];
+            keywords.forEach(kw => {
+                const regex = new RegExp(`\\b(${kw})\\b`, 'g');
+                escaped = escaped.replace(regex, '<span class="syntax-keyword">$1</span>');
+            });
+            
+            // Resaltar hooks de React
+            escaped = escaped.replace(/\b(useState|useEffect|useCallback|useMemo|useRef|useContext|useReducer)\b/g, '<span class="syntax-keyword">$1</span>');
+            
+            return escaped;
         }
 
         // Copiar bloque de código específico
@@ -1413,7 +1494,8 @@ Para mostrar u ocultar elementos según una condición:
             const explanationContainer = document.getElementById('explanationContainer');
             const explanationLines = document.getElementById('explanationLines');
             
-            outputCode.textContent = code;
+            // Usar highlightSyntax para mostrar el código con resaltado
+            outputCode.innerHTML = highlightSyntax(code);
             outputContainer.classList.remove('hidden');
             
             // Actualizar explicación
@@ -1429,13 +1511,9 @@ Para mostrar u ocultar elementos según una condición:
         }
 
         function copyCode() {
-            const code = document.getElementById('codeOutput').textContent;
-            const btn = document.querySelector('.btn-copy-code'); // El del output grande
-            
-            // Nota: Hay dos botones copiar, uno en bloques markdown y otro aquí.
-            // Buscamos específicamente el del contenedor de output si es posible, 
-            // pero reutilizamos la lógica global si el selector es ambiguo.
-            // Para asegurar, seleccionamos por contexto:
+            // Obtener el texto plano del código (sin HTML tags del resaltado)
+            const codeElement = document.getElementById('codeOutput');
+            const code = codeElement.textContent || codeElement.innerText;
             const specificBtn = document.querySelector('#codeOutputContainer .btn-copy-code');
 
             navigator.clipboard.writeText(code).then(() => {
@@ -1472,7 +1550,11 @@ Para mostrar u ocultar elementos según una condición:
                 const item = document.createElement('div');
                 item.className = 'checklist-item';
                 
-                // Intentar detectar palabras clave para teoría
+                // FIX 1: Escapar el texto del requisito para evitar que se renderice HTML real
+                const reqEscapado = escapearHTML(req);
+                const reqConCodigoResaltado = detectarYResaltarCodigo(req);
+                
+                // Intentar detectar palabras clave para teoría y código tentativo
                 const keywords = ['useState', 'useEffect', 'component', 'props', 'style', 'css', 'conditional', 'render'];
                 const foundKeyword = keywords.find(k => req.toLowerCase().includes(k));
                 
@@ -1490,10 +1572,15 @@ Para mostrar u ocultar elementos según una condición:
                     }
                 }
 
+                // FEATURE 2: Botón "Intentar generar código"
+                const generateCodeBtn = `<button class="btn-generate-code" onclick="intentarGenerarCodigo('${reqEscapado}', this)">Intentar generar código</button>`;
+
                 item.innerHTML = `
                     <input type="checkbox" onchange="updateProgress()">
-                    <div class="checklist-text">${req}</div>
+                    <div class="checklist-text">${reqConCodigoResaltado}</div>
                     ${theoryBtn}
+                    ${generateCodeBtn}
+                    <div class="generated-code-container" style="display:none;"></div>
                 `;
                 checklistDiv.appendChild(item);
             });
@@ -1511,6 +1598,130 @@ Para mostrar u ocultar elementos según una condición:
         function goToTheory(topicIndex) {
             switchView('teoria');
             loadTopic(topicIndex);
+        }
+
+        // FEATURE 2: Intentar generar código tentativo según palabras clave del sub-requisito
+        function intentarGenerarCodigo(reqTexto, btnElement) {
+            // El texto ya viene escapado desde el HTML
+            const reqOriginal = reqTexto;
+            
+            // Contenedor donde mostrar el código generado
+            const itemDiv = btnElement.closest('.checklist-item');
+            const codeContainer = itemDiv.querySelector('.generated-code-container');
+            
+            // Limpiar contenedor
+            codeContainer.innerHTML = '';
+            codeContainer.style.display = 'block';
+            
+            // Detectar patrones en el texto del requisito
+            const reqLower = reqOriginal.toLowerCase();
+            let codigoGenerado = '';
+            let patronesEncontrados = [];
+            
+            // 1. Detectar useState
+            if (reqLower.includes('usestate') || reqLower.includes('estado') || reqLower.includes('estado local')) {
+                // Intentar extraer nombre de variable del contexto
+                const matchNombre = reqOriginal.match(/(?:variable|llamada|nombre|state)\s*["']?(\w+)["']?/i) || 
+                                   reqOriginal.match(/\b([a-z][a-zA-Z0-9]*)\s*(?:=|es)/i);
+                const varName = matchNombre ? matchNombre[1] : 'contador';
+                const setterName = 'set' + varName.charAt(0).toUpperCase() + varName.slice(1);
+                
+                codigoGenerado += `const [${varName}, ${setterName}] = useState(null);\n`;
+                patronesEncontrados.push('useState');
+            }
+            
+            // 2. Detectar useEffect
+            if (reqLower.includes('useeffect') || reqLower.includes('efecto') || reqLower.includes('side effect')) {
+                codigoGenerado += `useEffect(() => {\n    // TODO: completar la lógica\n    console.log('Efecto ejecutado');\n}, []);\n`;
+                patronesEncontrados.push('useEffect');
+            }
+            
+            // 3. Detectar manejadores de eventos (onChange, onClick, onSubmit, etc.)
+            const eventosMatch = reqOriginal.match(/(?:onchange|onclick|onsubmit|onkeyup|onblur|onfocus)/gi);
+            if (eventosMatch || reqLower.includes('manejador') || reqLower.includes('handler')) {
+                const evento = eventosMatch ? eventosMatch[0] : 'onChange';
+                const handlerName = 'handle' + evento.charAt(2).toUpperCase() + evento.slice(3);
+                codigoGenerado += `function ${handlerName}(e) {\n    // TODO: implementar lógica del ${evento}\n    console.log('${evento} disparado');\n}\n`;
+                patronesEncontrados.push('handler');
+            }
+            
+            // 4. Detectar conditional rendering (&&, ternario, if/else)
+            if (reqLower.includes('&&') || reqLower.includes('conditional') || reqLower.includes('mostrar') && reqLower.includes('ocultar')) {
+                const sampleCond = 'condicion';
+                codigoGenerado += `{${sampleCond} && <p>Contenido condicional</p>}\n`;
+                patronesEncontrados.push('conditional-and');
+            } else if (reqLower.includes('ternario') || reqLower.includes('?') || reqLower.includes('si no')) {
+                codigoGenerado += `{condicion ? <p>Opción A</p> : <p>Opción B</p>}\n`;
+                patronesEncontrados.push('ternario');
+            }
+            
+            // 5. Detectar bucles (for, forEach, map)
+            if (reqLower.includes('for') || reqLower.includes('foreach') || reqLower.includes('recorrer') || reqLower.includes('iterar')) {
+                codigoGenerado += `// Recorrer array con forEach (NUNCA usar map/filter para efectos secundarios)\narray.forEach((item) => {\n    // TODO: procesar cada item\n    console.log(item);\n});\n`;
+                patronesEncontrados.push('bucle');
+            }
+            
+            // 6. Detectar props citadas explícitamente (ej: "onAgregar(nota)")
+            const propsMatch = reqOriginal.match(/(\w+)\(([^)]+)\)/g);
+            if (propsMatch) {
+                propsMatch.forEach(propCall => {
+                    const funcName = propCall.split('(')[0];
+                    const paramName = propCall.match(/\(([^)]+)\)/)?.[1] || 'param';
+                    codigoGenerado += `// Función pasada como prop: ${funcName}(${paramName})\n${funcName}(${paramName});\n`;
+                });
+                patronesEncontrados.push('props');
+            }
+            
+            // 7. Detectar return / JSX
+            if (reqLower.includes('return') || reqLower.includes('jsx') || reqLower.includes('renderizar')) {
+                codigoGenerado += `return (\n  <div className={styles.container}>\n    {/* TODO: completar JSX */}\n  </div>\n);\n`;
+                patronesEncontrados.push('jsx');
+            }
+            
+            // 8. Detectar imports
+            if (reqLower.includes('import') || reqLower.includes('componente')) {
+                codigoGenerado += `import React from 'react';\nimport styles from './Componente.module.css';\n`;
+                patronesEncontrados.push('imports');
+            }
+            
+            // Si no se detectó ningún patrón, mostrar mensaje
+            if (patronesEncontrados.length === 0) {
+                codeContainer.innerHTML = `
+                    <div class="code-output-container" style="margin-top: 0.5rem;">
+                        <p style="font-size: 0.85rem; color: var(--color-text-light); margin-bottom: 0.5rem;">
+                            No pude detectar un patrón conocido en este punto. Probá con el generador manual.
+                        </p>
+                        <button class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;" onclick="switchView('generar')">
+                            Ir al generador de código
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Mostrar código generado con resaltado de sintaxis
+            const codigoResaltado = highlightSyntax(codigoGenerado);
+            
+            codeContainer.innerHTML = `
+                <div class="code-output-container" style="margin-top: 0.5rem;">
+                    <p style="font-size: 0.8rem; color: var(--color-accent-2); margin-bottom: 0.5rem;">
+                        Fragmento tentativo — revisalo y completalo con el resto de tu código
+                    </p>
+                    <pre><code>${codigoResaltado}</code></pre>
+                    <button class="btn-copy-code" style="position: static; margin-top: 0.5rem;" onclick="copiarCodigoDesdeChecklist(this)">Copiar</button>
+                </div>
+            `;
+        }
+        
+        function copiarCodigoDesdeChecklist(btn) {
+            const codeContainer = btn.closest('.code-output-container');
+            const code = codeContainer.querySelector('code').textContent;
+            
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = '¡Copiado!';
+                setTimeout(() => btn.innerText = originalText, 1500);
+            });
         }
 
     </script>
