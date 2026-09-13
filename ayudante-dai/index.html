@@ -1858,7 +1858,7 @@ const todosMenores = edades.every(edad => edad < 25);
             } 
 
             // --- GENERADOR FETCH NEXTJS ---
-            if (topic.id === "fetch-nextjs") {
+            else if (topic.id === "fetch-nextjs") {
                 html += `
                 <div class="form-section">
                     <h3 style="margin-bottom:1rem; color:var(--neon-blue);">📡 Generador de Fetch + Métodos de Array</h3>
@@ -2166,7 +2166,7 @@ const todosMenores = edades.every(edad => edad < 25);
 
 
         // --- LÓGICA WEBSOCKETS ---
-            else if (topic.id === "websockets") {
+        else if (topic.id === "websockets") {
             html += `
                 <div class="form-section">
                     <div class="toggle-container">
