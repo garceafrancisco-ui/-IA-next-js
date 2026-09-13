@@ -981,7 +981,7 @@ export default function CondicionalConFuncion() {
         function renderGenerador(topic) {
             const contentElement = document.getElementById('content');
 
-            if (topic.id !== "hooks" && topic.id !== "componentes-basicos" && topic.id !== "componentes-compuestos" && topic.id !== "estilos-clsx") {
+            if (topic.id !== "hooks" && topic.id !== "componentes-basicos" && topic.id !== "componentes-compuestos" && topic.id !== "estilos-clsx" && topic.id !== "websockets") {
                 contentElement.innerHTML = `<div class="placeholder-box"><h3>🚧 En Construcción</h3><p>El generador para este tema estará disponible pronto.</p></div>`;
                 return;
             }
@@ -1130,6 +1130,56 @@ export default function CondicionalConFuncion() {
                 contentElement.innerHTML = html;
                 addFixedClassRow();
                 addConditionalClassRow();
+            }
+
+            // --- GENERADOR WEBSOCKETS ---
+            else if (topic.id === "websockets") {
+                html += `
+                <div class="form-section">
+                    <div class="toggle-container">
+                        <span style="color:var(--text-secondary); font-size:0.9rem;">Incluir configuración del servidor</span>
+                        <label class="switch">
+                            <input type="checkbox" id="ws-include-server">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Nombre del Hook</label>
+                        <input class="form-input" type="text" id="ws-hook-name" placeholder="useSocket" value="useSocket">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">URL del Servidor</label>
+                        <input class="form-input" type="text" id="ws-server-url" placeholder="http://localhost:3001" value="http://localhost:3001">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Eventos a Escuchar</label>
+                        <div id="ws-events-list"></div>
+                        <button type="button" class="btn-add" onclick="addWebSocketEvent()">+ Agregar Evento</button>
+                    </div>
+
+                    <div class="checkbox-group" style="margin-top:1rem;">
+                        <input type="checkbox" id="ws-include-joinroom" class="form-checkbox">
+                        <label for="ws-include-joinroom">Incluir función joinRoom</label>
+                    </div>
+
+                    <div class="checkbox-group" style="margin-top:0.5rem;">
+                        <input type="checkbox" id="ws-include-sendmessage" class="form-checkbox">
+                        <label for="ws-include-sendmessage">Incluir función sendMessage</label>
+                    </div>
+
+                    <div class="checkbox-group" style="margin-top:0.5rem;">
+                        <input type="checkbox" id="ws-include-pingall" class="form-checkbox">
+                        <label for="ws-include-pingall">Incluir función pingAll</label>
+                    </div>
+
+                    <button type="button" class="btn-primary" onclick="generateWebSocketCode()">Generar Código</button>
+                    <div id="generated-code"></div>
+                </div>`;
+                contentElement.innerHTML = html;
+                addWebSocketEvent();
             }
         }
 
@@ -1482,6 +1532,137 @@ export default function CondicionalConFuncion() {
             document.getElementById('generated-code').innerHTML = crearBloqueDeCodigo(code);
         };
 
+        // --- LÓGICA WEBSOCKETS ---
+        window.addWebSocketEvent = function() {
+            const div = document.createElement('div');
+            div.className = 'dynamic-list-row';
+            div.innerHTML = `
+                <input class="form-input" style="flex:1" placeholder="Evento (ej: connection)" data-ws-event>
+                <input class="form-input" style="flex:1" placeholder="Callback (ej: onConnection)" data-ws-callback>
+                <button class="btn-remove" onclick="this.parentElement.remove()">×</button>
+            `;
+            document.getElementById('ws-events-list').appendChild(div);
+        };
+
+        window.generateWebSocketCode = function() {
+            const includeServer = document.getElementById('ws-include-server').checked;
+            const hookName = document.getElementById('ws-hook-name').value || 'useSocket';
+            const serverUrl = document.getElementById('ws-server-url').value || 'http://localhost:3001';
+            const includeJoinRoom = document.getElementById('ws-include-joinroom').checked;
+            const includeSendMessage = document.getElementById('ws-include-sendmessage').checked;
+            const includePingAll = document.getElementById('ws-include-pingall').checked;
+
+            let events = [];
+            document.querySelectorAll('#ws-events-list .dynamic-list-row').forEach(row => {
+                const eventName = row.querySelector('[data-ws-event]').value;
+                const callback = row.querySelector('[data-ws-callback]').value;
+                if (eventName && callback) {
+                    events.push({ event: eventName, callback: callback });
+                }
+            });
+
+            let code = '';
+
+            // Código del servidor (opcional)
+            if (includeServer) {
+                code += `// === SERVIDOR (server.js) ===\n`;
+                code += `const express = require('express');\n`;
+                code += `const http = require('http');\n`;
+                code += `const { Server } = require('socket.io');\n\n`;
+                code += `const app = express();\n`;
+                code += `const server = http.createServer(app);\n`;
+                code += `const io = new Server(server, {\n`;
+                code += `  cors: {\n`;
+                code += `    origin: "http://localhost:3000",\n`;
+                code += `    methods: ["GET", "POST"]\n`;
+                code += `  }\n`;
+                code += `});\n\n`;
+                code += `io.on('connection', (socket) => {\n`;
+                code += `  console.log('Usuario conectado:', socket.id);\n\n`;
+                code += `  socket.on('joinRoom', (roomId) => {\n`;
+                code += `    socket.join(roomId);\n`;
+                code += `    console.log(\`Usuario \${socket.id} se unió a la sala \${roomId}\`);\n`;
+                code += `  });\n\n`;
+                code += `  socket.on('sendMessage', ({ roomId, message }) => {\n`;
+                code += `    io.to(roomId).emit('receiveMessage', { userId: socket.id, message });\n`;
+                code += `  });\n\n`;
+                code += `  socket.on('disconnect', () => {\n`;
+                code += `    console.log('Usuario desconectado:', socket.id);\n`;
+                code += `  });\n`;
+                code += `});\n\n`;
+                code += `server.listen(3001, () => {\n`;
+                code += `  console.log('Servidor Socket.IO escuchando en puerto 3001');\n`;
+                code += `});\n\n\n`;
+            }
+
+            // Código del hook useSocket
+            code += `// === HOOK useSocket ===\n`;
+            code += `'use client';\n\n`;
+            code += `import { useEffect, useRef } from 'react';\n`;
+            code += `import { io } from 'socket.io-client';\n\n`;
+            code += `export default function ${hookName}(serverUrl = '${serverUrl}') {\n`;
+            code += `  const socketRef = useRef(null);\n\n`;
+            code += `  useEffect(() => {\n`;
+            code += `    // Crear conexión\n`;
+            code += `    socketRef.current = io(serverUrl, {\n`;
+            code += `      transports: ['websocket'],\n`;
+            code += `      reconnection: true,\n`;
+            code += `      reconnectionDelay: 1000\n`;
+            code += `    });\n\n`;
+            code += `    // Escuchar eventos\n`;
+            events.forEach(e => {
+                code += `    socketRef.current.on('${e.event}', ${e.callback});\n`;
+            });
+            if (events.length === 0) {
+                code += `    socketRef.current.on('connect', () => {\n`;
+                code += `      console.log('Conectado al servidor WebSocket');\n`;
+                code += `    });\n`;
+            }
+            code += `\n`;
+            code += `    // Cleanup\n`;
+            code += `    return () => {\n`;
+            events.forEach(e => {
+                code += `      socketRef.current.off('${e.event}', ${e.callback});\n`;
+            });
+            code += `      socketRef.current.disconnect();\n`;
+            code += `    };\n`;
+            code += `  }, [serverUrl]);\n\n`;
+            code += `  // Funciones útiles\n`;
+            
+            if (includeJoinRoom) {
+                code += `  const joinRoom = (roomId) => {\n`;
+                code += `    if (socketRef.current) {\n`;
+                code += `      socketRef.current.emit('joinRoom', roomId);\n`;
+                code += `    }\n`;
+                code += `  };\n\n`;
+            }
+            
+            if (includeSendMessage) {
+                code += `  const sendMessage = (roomId, message) => {\n`;
+                code += `    if (socketRef.current) {\n`;
+                code += `      socketRef.current.emit('sendMessage', { roomId, message });\n`;
+                code += `    }\n`;
+                code += `  };\n\n`;
+            }
+            
+            if (includePingAll) {
+                code += `  const pingAll = () => {\n`;
+                code += `    if (socketRef.current) {\n`;
+                code += `      socketRef.current.emit('pingAll');\n`;
+                code += `    }\n`;
+                code += `  };\n\n`;
+            }
+            
+            code += `  return {\n`;
+            code += `    socket: socketRef.current,\n`;
+            if (includeJoinRoom) code += `    joinRoom,\n`;
+            if (includeSendMessage) code += `    sendMessage,\n`;
+            if (includePingAll) code += `    pingAll,\n`;
+            code += `  };\n`;
+            code += `}\n`;
+
+            document.getElementById('generated-code').innerHTML = crearBloqueDeCodigo(code);
+        };
         // ==== 7. INIT ====
         document.addEventListener('DOMContentLoaded', () => {
             renderSidebar();
