@@ -1,0 +1,49 @@
+/* Layout del panel generador */
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.columnaForm,
+.columnaResultado {
+  display: flex;
+  flex-direction: column;
+}
+
+.subtitulo {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ayuda {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 12px;
+}
+
+.error {
+  color: var(--danger);
+  font-size: 14px;
+  padding: 16px;
+  background-color: rgba(248, 81, 73, 0.1);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+}
+
+/* Responsive: en pantallas chicas, una columna debajo de la otra */
+@media (max-width: 900px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+}
