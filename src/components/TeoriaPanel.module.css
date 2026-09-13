@@ -1,0 +1,107 @@
+/* Contenedor del panel de teoría */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.markdown {
+  color: var(--text-primary);
+  line-height: 1.7;
+}
+
+/* Títulos */
+.markdown h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.markdown h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-top: 32px;
+  margin-bottom: 16px;
+}
+
+.markdown h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+/* Párrafos y listas */
+.markdown p {
+  margin-bottom: 16px;
+}
+
+.markdown ul,
+.markdown ol {
+  margin-bottom: 16px;
+  padding-left: 24px;
+}
+
+.markdown li {
+  margin-bottom: 8px;
+}
+
+/* Enlaces */
+.markdown a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.markdown a:hover {
+  text-decoration: underline;
+}
+
+/* Bloques de código dentro del markdown */
+.markdown pre {
+  margin: 16px 0;
+}
+
+/* Código inline */
+.markdown code:not(pre code) {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background-color: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: var(--radius);
+  color: var(--text-primary);
+}
+
+/* Tablas */
+.markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+
+.markdown th,
+.markdown td {
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdown th {
+  background-color: var(--bg-tertiary);
+  font-weight: 600;
+}
+
+/* Blockquotes */
+.markdown blockquote {
+  border-left: 4px solid var(--accent);
+  padding-left: 16px;
+  margin: 16px 0;
+  color: var(--text-secondary);
+}
+
+/* Separadores horizontales */
+.markdown hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 32px 0;
+}
