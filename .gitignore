@@ -1,3 +1,44 @@
-Nothing needs to be added to .gitignore since only a markdown file (README-componentes-compuestos.md) was added, which is a source/config file and should not be ignored.
-Nothing needs to be added to the .gitignore file based on the provided changes. The only file added is README-hooks.md, which is a documentation file that should not be ignored.
-Nothing needs to be added to .gitignore since the changes only include a markdown documentation file (README-componentes-basicos.md) which is a source/config file and should not be ignored.
+```
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+*.env.*
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# Logs
+*.log
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# Distribution / packaging
+*.tar.gz
+*.whl
+*.egg
+*.egg-info/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+```

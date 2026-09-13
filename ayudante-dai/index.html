@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ayudante DAI</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- marked.js para renderizar markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar con la lista de temas -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1>Ayudante DAI</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <ul id="topics-list">
+          <!-- Los temas se generan dinámicamente desde sidebar.js -->
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Área principal -->
+    <main class="main-content">
+      <header class="content-header">
+        <h2 id="current-topic-title">Selecciona un tema</h2>
+        <div class="mode-switch">
+          <button class="mode-btn active" data-mode="teoria">Teoría</button>
+          <button class="mode-btn" data-mode="generador">Generador</button>
+        </div>
+      </header>
+
+      <div id="content-area" class="content-area">
+        <!-- Aquí se renderiza la teoría o el generador según el modo activo -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Punto de entrada de la app como módulo ES6 -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
