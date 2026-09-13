@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ayudante DAI | Neon Edition</title>
+    <!-- Marked para renderizar Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            /* Paleta Neón Dark */
+            --bg-primary: #050505;       /* Casi negro absoluto */
+            --bg-secondary: #0a0a12;     /* Fondo de tarjetas */
+            --bg-tertiary: #13131f;      /* Inputs y headers */
+            
+            --border-color: #2a2a35;
+            
+            --text-primary: #e0e0e0;
+            --text-secondary: #94a3b8;
+            
+            /* Colores Neón */
+            --neon-blue: #00f3ff;        /* Accent principal */
+            --neon-blue-dim: rgba(0, 243, 255, 0.1);
+            --neon-purple: #bc13fe;      /* Secundario / Hooks */
+            --neon-green: #0aff60;       /* Success / Componentes */
+            --neon-pink: #ff0055;        /* Danger / Estilos */
+            
+            --glow-strong: 0 0 10px rgba(0, 243, 255, 0.7), 0 0 20px rgba(0, 243, 255, 0.5);
+            --glow-soft: 0 0 5px rgba(0, 243, 255, 0.3);
+            
+            --radius: 8px;
+            --font-mono: "Fira Code", "Consolas", monospace;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(188, 19, 254, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 243, 255, 0.05) 0%, transparent 20%);
+        }
+
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--neon-blue); }
+
+        /* SIDEBAR */
+        #sidebar {
+            width: 260px;
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .app-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 2rem;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--neon-blue);
+            border-bottom: 2px solid var(--neon-blue);
+            padding-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .topic-item {
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            border-radius: var(--radius);
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .topic-item:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--neon-blue);
+            border-color: rgba(0, 243, 255, 0.3);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
+        }
+
+        .topic-item.active {
+            background: linear-gradient(90deg, var(--neon-blue-dim), transparent);
+            color: var(--neon-blue);
+            border-left: 3px solid var(--neon-blue);
+            box-shadow: inset 10px 0 20px -10px rgba(0, 243, 255, 0.2);
+        }
+
+        /* MAIN AREA */
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        #header {
+            background-color: rgba(10, 10, 18, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        #topic-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-shadow: 0 0 5px rgba(255,255,255,0.2);
+        }
+
+        .mode-switch {
+            display: flex;
+            background-color: var(--bg-tertiary);
+            border-radius: 20px;
+            padding: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .mode-btn {
+            padding: 0.4rem 1.2rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .mode-btn:hover { color: var(--text-primary); }
+
+        .mode-btn.active {
+            background-color: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.6);
+        }
+
+        #content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* MARKDOWN STYLES */
+        .markdown-body {
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+            color: var(--neon-blue);
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+            text-shadow: 0 0 5px rgba(0, 243, 255, 0.3);
+        }
+        .markdown-body h1 { border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; }
+        .markdown-body code {
+            font-family: var(--font-mono);
+            background-color: var(--bg-tertiary);
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            color: var(--neon-pink);
+            border: 1px solid rgba(255, 0, 85, 0.2);
+        }
+        .markdown-body pre {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1rem;
+            overflow-x: auto;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        .markdown-body pre code {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            padding: 0;
+        }
+
+        /* GENERATOR FORMS */
+        .form-section {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .form-group { margin-bottom: 1.2rem; }
+        
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--neon-blue);
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.7rem;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            transition: all 0.3s;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 10px var(--neon-blue-dim);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .checkbox-group label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        /* Dynamic Lists */
+        .dynamic-list-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            align-items: center;
+        }
+        .btn-remove {
+            background: transparent;
+            border: 1px solid var(--neon-pink);
+            color: var(--neon-pink);
+            border-radius: 4px;
+            width: 30px;
+            height: 38px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .btn-remove:hover {
+            background: var(--neon-pink);
+            color: #fff;
+            box-shadow: 0 0 10px var(--neon-pink);
+        }
+
+        .btn-add {
+            background: transparent;
+            border: 1px dashed var(--neon-green);
+            color: var(--neon-green);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-add:hover {
+            background: var(--neon-green);
+            color: #000;
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+
+        /* Buttons General */
+        .btn-primary {
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-purple));
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--radius);
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+        }
+
+        /* Code Output */
+        .code-block-container {
+            position: relative;
+            margin-top: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .code-header {
+            background: var(--bg-tertiary);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .code-block {
+            background-color: #0d0d12;
+            color: #a5b3ce;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .copy-btn {
+            background: var(--bg-secondary);
+            color: var(--neon-blue);
+            border: 1px solid var(--neon-blue);
+            border-radius: 4px;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .copy-btn:hover {
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        /* Hook Selector Tabs */
+        .hook-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+        .hook-option {
+            padding: 0.5rem 1.5rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        .hook-option:hover { border-color: var(--neon-blue); color: var(--neon-blue); }
+        .hook-option.active {
+            background: var(--neon-blue);
+            color: #000;
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+        }
+
+        .placeholder-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            background: radial-gradient(circle, var(--bg-tertiary) 0%, var(--bg-primary) 100%);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius);
+            text-align: center;
+            color: var(--text-secondary);
+        }
+        .placeholder-box h3 { color: var(--neon-purple); margin-bottom: 1rem; }
+
+        /* Toggle Switch for Full Component */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            background: var(--bg-tertiary);
+            padding: 0.8rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-secondary);
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--neon-blue); border-color: var(--neon-blue); }
+        input:checked + .slider:before { transform: translateX(26px); background-color: #000; }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <div class="app-title">Ayudante DAI</div>
+        <div id="topics-list"></div>
+    </div>
+    
+    <div id="main">
+        <div id="header">
+            <h2 id="topic-title">Cargando...</h2>
+            <div class="mode-switch">
+                <button class="mode-btn active" data-mode="teoria">Teoría</button>
+                <button class="mode-btn" data-mode="generador">Generador</button>
+            </div>
+        </div>
+        <div id="content">
+            <!-- Contenido dinámico -->
+        </div>
+    </div>
+
+    <script>
+        // ==== 1. DATOS DE LOS TEMAS ====
+        const TOPICS = [
+            {
+                id: "hooks",
+                nombre: "Hooks (useState / useEffect)",
+                readmeContent: `# Hooks en React\n\nLos hooks son funciones especiales introducidas en React 16.8 que nos permiten usar estado y otras características de React sin escribir una clase.\n\n## useState\n\nEl Hook **useState** permite añadir estado local a componentes funcionales.\n\n### Sintaxis\n\n\`\`\`js\nimport { useState } from 'react'\n\nconst [estado, setEstado] = useState(valor_inicial);\n\`\`\`\n\n## useEffect\n\nEl Hook **useEffect** permite manejar efectos secundarios (side effects) en componentes funcionales.\n\n### Sintaxis\n\n\`\`\`js\nimport { useEffect } from 'react'\n\nuseEffect(() => {\n  // Código del efecto\n}, [dependencias]);\n\`\`\`\n\n> **Importante**: En archivos de páginas o componentes que interactúen con el navegador o usen hooks, es necesario incluir la directiva "use client" al inicio del archivo.`,
+                campos: [], // Usamos lógica custom para los modos
+                generar: (valores) => {
+                    // La lógica de generación se maneja dentro del render por la complejidad de los modos
+                    return ""; 
+                }
+            },
+            {
+                id: "componentes-basicos",
+                nombre: "Componentes Básicos",
+                readmeContent: `# Componentes Básicos\n\nUn componente básico es un bloque de construcción fundamental en React. Puede ser una página en \`src/app/\` o un componente reutilizable en \`src/components/\`.\n\n## Convención de Nombres\n\n- Siempre usar **PascalCase** para nombrar componentes.\n\n## Props\n\nLas props son argumentos que se le pasan a un componente. Se desestructuran directamente en la firma de la función.\n\n\`\`\`js\nexport default function Boton({ texto, onClick }) { ... }\n\`\`\``,
+                campos: [],
+                generar: () => {}
+            },
+            {
+                id: "componentes-compuestos",
+                nombre: "Componentes Compuestos",
+                readmeContent: `# Componentes Compuestos\n\nUn componente compuesto se construye a partir de otros componentes básicos o reutilizables.\n\n## Ejemplo\n\n\`\`\`js\nimport Input from '@/components/Input';\nimport Boton from '@/components/Boton';\n\nexport default function Formulario() {\n  return (\n    <form>\n      <Input etiqueta="Nombre" />\n      <Boton texto="Enviar" />\n    </form>\n  );\n}\n\`\`\``,
+                campos: [],
+                generar: () => {}
+            },
+            {
+                id: "estilos-clsx",
+                nombre: "Estilos con clsx",
+                readmeContent: `# Estilos con clsx\n\nPara aplicar estilos condicionales en Next.js usamos \`clsx\` junto con CSS Modules.\n\n## Uso\n\n\`\`\`js\nimport styles from './MiComponente.module.css';\nimport clsx from 'clsx';\n\n<div className={clsx(styles.base, { [styles.activo]: activo })} />\n\`\`\``,
+                campos: [],
+                generar: () => {}
+            }
+        ];
+
+        // ==== 2. ESTADO GLOBAL ====
+        let temaActivo = TOPICS[0].id;
+        let modoActivo = "teoria";
+
+        // ==== 3. RENDER DEL SIDEBAR ====
+        function renderSidebar() {
+            const topicsListElement = document.getElementById('topics-list');
+            topicsListElement.innerHTML = '';
+
+            TOPICS.forEach(topic => {
+                const div = document.createElement('div');
+                div.className = `topic-item ${topic.id === temaActivo ? 'active' : ''}`;
+                // Icono simple basado en el ID
+                let icon = '📄';
+                if(topic.id === 'hooks') icon = '⚛️';
+                if(topic.id === 'componentes-basicos') icon = '🧱';
+                if(topic.id === 'componentes-compuestos') icon = '🏗️';
+                if(topic.id === 'estilos-clsx') icon = '🎨';
+                
+                div.innerHTML = `<span>${icon}</span> ${topic.nombre}`;
+                div.onclick = () => {
+                    temaActivo = topic.id;
+                    renderSidebar();
+                    const topicData = TOPICS.find(t => t.id === temaActivo);
+                    document.getElementById('topic-title').textContent = topicData.nombre;
+                    if (modoActivo === "teoria") {
+                        renderTeoria(topicData);
+                    } else {
+                        renderGenerador(topicData);
+                    }
+                };
+                topicsListElement.appendChild(div);
+            });
+        }
+
+        // ==== 4. RENDER DE TEORÍA ====
+        function renderTeoria(topic) {
+            const contentElement = document.getElementById('content');
+            const parsedMarkdown = marked.parse(topic.readmeContent);
+            contentElement.innerHTML = `<div class="markdown-body">${parsedMarkdown}</div>`;
+        }
+
+        // ==== 5. RENDER DEL GENERADOR ====
+        function renderGenerador(topic) {
+            const contentElement = document.getElementById('content');
+
+            if (topic.id !== "hooks" && topic.id !== "componentes-basicos" && topic.id !== "componentes-compuestos" && topic.id !== "estilos-clsx") {
+                contentElement.innerHTML = `<div class="placeholder-box"><h3>🚧 En Construcción</h3><p>El generador para este tema estará disponible pronto.</p></div>`;
+                return;
+            }
+
+            let html = '';
+
+            // --- GENERADOR HOOKS ---
+            if (topic.id === "hooks") {
+                html += `
+                <div class="form-section">
+                    <div class="hook-selector">
+                        <div class="hook-option active" data-hook-mode="simple-useState">useState</div>
+                        <div class="hook-option" data-hook-mode="simple-useEffect">useEffect</div>
+                        <div class="hook-option" data-hook-mode="combined">Combinado (+)</div>
+                    </div>
+
+                    <div class="toggle-container">
+                        <span style="color:var(--text-secondary); font-size:0.9rem;">Envolver en componente completo</span>
+                        <label class="switch">
+                            <input type="checkbox" id="wrap-component" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Contenedor Dinámico -->
+                    <div id="hooks-dynamic-area"></div>
+                    
+                    <button type="button" class="btn-primary" id="btn-generate-hooks">Generar Código</button>
+                    <div id="generated-code"></div>
+                </div>`;
+                
+                contentElement.innerHTML = html;
+                initHooksGenerator();
+            } 
+            
+            // --- GENERADOR COMPONENTES BÁSICOS ---
+            else if (topic.id === "componentes-basicos") {
+                html += `
+                <div class="form-section">
+                    <div class="toggle-container">
+                        <span style="color:var(--text-secondary); font-size:0.9rem;">Envolver en componente completo</span>
+                        <label class="switch">
+                            <input type="checkbox" id="wrap-component" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Nombre del Componente</label>
+                        <input class="form-input" type="text" id="comp-name" placeholder="Ej: mi boton" oninput="this.value = toPascalCase(this.value)">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Destino</label>
+                        <select class="form-select" id="comp-destino">
+                            <option value="page">Página (src/app/...)</option>
+                            <option value="component">Componente Reutilizable (src/components/...)</option>
+                        </select>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="use-client" class="form-checkbox">
+                        <label for="use-client">Incluir 'use client'</label>
+                    </div>
+
+                    <div class="form-group" style="margin-top:1rem;">
+                        <label class="form-label">Props</label>
+                        <div id="props-list"></div>
+                        <button type="button" class="btn-add" onclick="addPropRow()">+ Agregar Prop</button>
+                    </div>
+
+                    <div class="checkbox-group" style="margin-top:1rem;">
+                        <input type="checkbox" id="use-children" class="form-checkbox">
+                        <label for="use-children">Usar prop "children"</label>
+                    </div>
+
+                    <button type="button" class="btn-primary" onclick="generateBasicComponent()">Generar Código</button>
+                    <div id="generated-code"></div>
+                </div>`;
+                contentElement.innerHTML = html;
+                addPropRow(); // Agregar una fila inicial
+            }
+
+            // --- GENERADOR COMPONENTES COMPUESTOS ---
+            else if (topic.id === "componentes-compuestos") {
+                html += `
+                <div class="form-section">
+                    <div class="toggle-container">
+                        <span style="color:var(--text-secondary); font-size:0.9rem;">Envolver en componente completo</span>
+                        <label class="switch">
+                            <input type="checkbox" id="wrap-component" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Nombre del Componente Compuesto</label>
+                        <input class="form-input" type="text" id="comp-comp-name" placeholder="Ej: FormularioContacto" oninput="this.value = toPascalCase(this.value)">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Sub-componentes</label>
+                        <div id="subcomp-list"></div>
+                        <button type="button" class="btn-add" onclick="addSubCompRow()">+ Agregar Sub-componente</button>
+                    </div>
+
+                    <button type="button" class="btn-primary" onclick="generateCompoundComponent()">Generar Código</button>
+                    <div id="generated-code"></div>
+                </div>`;
+                contentElement.innerHTML = html;
+                addSubCompRow();
+            }
+
+            // --- GENERADOR ESTILOS CLSX ---
+            else if (topic.id === "estilos-clsx") {
+                html += `
+                <div class="form-section">
+                    <div class="toggle-container">
+                        <span style="color:var(--text-secondary); font-size:0.9rem;">Envolver en componente completo</span>
+                        <label class="switch">
+                            <input type="checkbox" id="wrap-component" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Nombre del Componente</label>
+                        <input class="form-input" type="text" id="style-comp-name" placeholder="Ej: BotonNeon" oninput="this.value = toPascalCase(this.value)">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Clases Fijas (CSS Module)</label>
+                        <div id="fixed-classes-list"></div>
+                        <button type="button" class="btn-add" onclick="addFixedClassRow()">+ Agregar Clase Fija</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Clases Condicionales</label>
+                        <div id="conditional-classes-list"></div>
+                        <button type="button" class="btn-add" onclick="addConditionalClassRow()">+ Agregar Condicional</button>
+                    </div>
+
+                    <button type="button" class="btn-primary" onclick="generateClsxStyles()">Generar Código</button>
+                    <div id="generated-code"></div>
+                </div>`;
+                contentElement.innerHTML = html;
+                addFixedClassRow();
+                addConditionalClassRow();
+            }
+        }
+
+        // ==== 6. LÓGICA ESPECÍFICA DE GENERADORES ====
+
+        // --- HELPERS GENERALES ---
+        function toPascalCase(str) {
+            return str.replace(/(?:^|[\s- '_])+(.)?/g, (_, chr) => chr ? chr.toUpperCase() : '');
+        }
+
+        function crearBloqueDeCodigo(codigo, lenguaje = 'javascript') {
+            return `
+                <div class="code-block-container">
+                    <div class="code-header">
+                        <span>Código Generado</span>
+                        <button class="copy-btn" onclick="copiarCodigo(this)">Copiar</button>
+                    </div>
+                    <pre class="code-block"><code>${codigo.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+                </div>
+            `;
+        }
+
+        window.copiarCodigo = function(btn) {
+            const code = btn.parentElement.nextElementSibling.innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = "¡Copiado!";
+                btn.style.background = "var(--neon-green)";
+                btn.style.color = "#000";
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.background = "";
+                    btn.style.color = "";
+                }, 1500);
+            });
+        };
+
+        // --- LÓGICA HOOKS (COMPLEJA) ---
+        function initHooksGenerator() {
+            renderHooksMode('simple-useState');
+            
+            document.querySelectorAll('.hook-option').forEach(el => {
+                el.addEventListener('click', function() {
+                    document.querySelectorAll('.hook-option').forEach(e => e.classList.remove('active'));
+                    this.classList.add('active');
+                    renderHooksMode(this.dataset.hookMode);
+                });
+            });
+
+            document.getElementById('btn-generate-hooks').addEventListener('click', generateHooksCode);
+        }
+
+        function renderHooksMode(mode) {
+            const container = document.getElementById('hooks-dynamic-area');
+            container.innerHTML = '';
+
+            if (mode === 'simple-useState') {
+                container.innerHTML = `
+                    <div class="form-group"><label class="form-label">Variable</label><input class="form-input" id="h-var" placeholder="contador"></div>
+                    <div class="form-group"><label class="form-label">Valor Inicial</label><input class="form-input" id="h-val" placeholder="0"></div>
+                `;
+            } else if (mode === 'simple-useEffect') {
+                container.innerHTML = `
+                    <div class="form-group"><label class="form-label">Dependencias (coma sep.)</label><input class="form-input" id="h-deps" placeholder="dato, otro"></div>
+                    <div class="checkbox-group"><input type="checkbox" id="h-cleanup"><label for="h-cleanup">¿Necesita cleanup?</label></div>
+                    <div class="form-group" style="margin-top:0.5rem;"><label class="form-label">Descripción (comentario)</label><input class="form-input" id="h-desc" placeholder="Suscribirse a..."></div>
+                `;
+            } else if (mode === 'combined') {
+                container.innerHTML = `
+                    <div style="margin-bottom:1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem;">
+                        <label class="form-label">Lista de useState</label>
+                        <div id="combined-usestate-list"></div>
+                        <button type="button" class="btn-add" onclick="addCombinedUseState()">+ Agregar useState</button>
+                    </div>
+                    <div>
+                        <label class="form-label">Lista de useEffect</label>
+                        <div id="combined-useeffect-list"></div>
+                        <button type="button" class="btn-add" onclick="addCombinedUseEffect()">+ Agregar useEffect</button>
+                    </div>
+                `;
+                addCombinedUseState();
+                addCombinedUseEffect();
+            }
+        }
+
+        window.addCombinedUseState = function() {
+            const div = document.createElement('div');
+            div.className = 'dynamic-list-row';
+            div.style.flexWrap = 'wrap';
+            div.innerHTML = `
+                <input class="form-input" style="flex:1; min-width:100px;" placeholder="Variable (ej: count)" data-type="us-var">
+                <input class="form-input" style="flex:1; min-width:100px;" placeholder="Inicial (ej: 0)" data-type="us-val">
+                <button class="btn-remove" onclick="this.parentElement.remove()">×</button>
+            `;
+            document.getElementById('combined-usestate-list').appendChild(div);
+        };
+
+        window.addCombinedUseEffect = function() {
+            const div = document.createElement('div');
+            div.className = 'dynamic-list-row';
+            div.style.flexWrap = 'wrap';
+            div.innerHTML = `
+                <input class="form-input" style="flex:2; min-width:150px;" placeholder="Dependencias (ej: user, id)" data-type="ue-deps">
+                <div style="display:flex; align-items:center; gap:5px; color:var(--text-secondary); font-size:0.8rem;">
+                    <input type="checkbox" data-type="ue-clean"> Cleanup
+                </div>
+                <button class="btn-remove" onclick="this.parentElement.remove()">×</button>
+            `;
+            document.getElementById('combined-useeffect-list').appendChild(div);
+        };
+
+        function generateHooksCode() {
+            const modeEl = document.querySelector('.hook-option.active');
+            const mode = modeEl ? modeEl.dataset.hookMode : 'simple-useState';
+            const wrap = document.getElementById('wrap-component').checked;
+            
+            let imports = new Set();
+            let body = '';
+            let hasClient = false;
+
+            if (mode === 'simple-useState') {
+                const v = document.getElementById('h-var').value || 'estado';
+                const val = document.getElementById('h-val').value || 'null';
+                const setter = 'set' + v.charAt(0).toUpperCase() + v.slice(1);
+                imports.add('useState');
+                body = `const [${v}, ${setter}] = useState(${val});`;
+                hasClient = true;
+            } 
+            else if (mode === 'simple-useEffect') {
+                const deps = document.getElementById('h-deps').value;
+                const clean = document.getElementById('h-cleanup').checked;
+                const desc = document.getElementById('h-desc').value || 'Efecto secundario';
+                imports.add('useEffect');
+                
+                body = `useEffect(() => {\n    // ${desc}\n`;
+                if (clean) {
+                    body += `    \n    return () => {\n      // Limpieza\n    };\n`;
+                }
+                body += `  }, [${deps}]);`;
+                hasClient = true;
+            } 
+            else if (mode === 'combined') {
+                // Recorrer UseStates
+                const usRows = document.querySelectorAll('#combined-usestate-list .dynamic-list-row');
+                if (usRows.length > 0) {
+                    imports.add('useState');
+                    usRows.forEach(row => {
+                        const v = row.querySelector('[data-type="us-var"]').value || 'estado';
+                        const val = row.querySelector('[data-type="us-val"]').value || 'null';
+                        const setter = 'set' + v.charAt(0).toUpperCase() + v.slice(1);
+                        body += `const [${v}, ${setter}] = useState(${val});\n  `;
+                    });
+                    hasClient = true;
+                }
+
+                // Recorrer UseEffects
+                const ueRows = document.querySelectorAll('#combined-useeffect-list .dynamic-list-row');
+                if (ueRows.length > 0) {
+                    imports.add('useEffect');
+                    ueRows.forEach(row => {
+                        const deps = row.querySelector('[data-type="ue-deps"]').value;
+                        const clean = row.querySelector('[data-type="ue-clean"]').checked;
+                        
+                        body += `useEffect(() => {\n    // Efecto\n`;
+                        if (clean) {
+                            body += `    return () => {\n      // Limpieza\n    };\n`;
+                        }
+                        body += `  }, [${deps}]);\n  `;
+                    });
+                    hasClient = true;
+                }
+            }
+
+            let finalCode = '';
+            if (hasClient) finalCode += "'use client';\n";
+            if (imports.size > 0) {
+                finalCode += `import { ${Array.from(imports).join(', ')} } from 'react';\n\n`;
+            }
+
+            if (wrap) {
+                finalCode += `export default function MiComponente() {\n  ${body}\n\n  return (\n    <div>\n      {/* Contenido */}\n    </div>\n  );\n}`;
+            } else {
+                finalCode = body.trim();
+            }
+
+            document.getElementById('generated-code').innerHTML = crearBloqueDeCodigo(finalCode);
+        }
+
+        // --- LÓGICA COMPONENTES BÁSICOS ---
+        window.addPropRow = function() {
+            const div = document.createElement('div');
+            div.className = 'dynamic-list-row';
+            div.innerHTML = `
+                <input class="form-input" style="flex:2" placeholder="Nombre prop (ej: onClick)" data-prop-name>
+                <div style="display:flex; align-items:center; gap:5px; color:var(--text-secondary); font-size:0.8rem; white-space:nowrap;">
+                    <input type="checkbox" data-prop-req> Obligatoria
+                </div>
+                <button class="btn-remove" onclick="this.parentElement.remove()">×</button>
+            `;
+            document.getElementById('props-list').appendChild(div);
+        };
+
+        window.generateBasicComponent = function() {
+            const name = toPascalCase(document.getElementById('comp-name').value) || 'MiComponente';
+            const destino = document.getElementById('comp-destino').value;
+            const useClient = document.getElementById('use-client').checked;
+            const useChildren = document.getElementById('use-children').checked;
+            const wrap = document.getElementById('wrap-component').checked;
+
+            // Detectar props de función para activar useClient automáticamente si no está marcado
+            let propsList = [];
+            let hasFuncProp = false;
+            document.querySelectorAll('#props-list .dynamic-list-row').forEach(row => {
+                const pName = row.querySelector('[data-prop-name]').value;
+                if (pName) {
+                    propsList.push(pName);
+                    if (pName.toLowerCase().includes('on')) hasFuncProp = true;
+                }
+            });
+            if (hasFuncProp && !useClient) document.getElementById('use-client').checked = true; // Feedback visual solo
+
+            let code = '';
+            if (useClient || hasFuncProp) code += "'use client';\n";
+            
+            // Comentario de ruta
+            const ruta = destino === 'page' ? `// src/app/${name.toLowerCase()}/page.js` : `// src/components/${name}.jsx`;
+            code += `${ruta}\n`;
+
+            let propsStr = propsList.join(', ');
+            if (useChildren) propsStr = propsStr ? `${propsStr}, children` : 'children';
+
+            const funcSig = `export default function ${name}({ ${propsStr} }) {`;
+            
+            let body = `  return (\n    <div>\n      ${useChildren ? '{children}' : '<!-- Contenido -->'}\n    </div>\n  );\n}`;
+
+            if (wrap) {
+                code += `\n${funcSig}\n${body}\n}`;
+            } else {
+                code += `\n${funcSig}\n  // ... resto de tu lógica\n${body}\n}`;
+            }
+
+            document.getElementById('generated-code').innerHTML = crearBloqueDeCodigo(code);
+        };
+
+        // --- LÓGICA COMPONENTES COMPUESTOS ---
+        window.addSubCompRow = function() {
+            const div = document.createElement('div');
+            div.className = 'dynamic-list-row';
+            div.innerHTML = `
+                <input class="form-input" style="flex:1" placeholder="Nombre (ej: Button)" data-sc-name>
+                <input class="form-input" style="flex:1" placeholder="Ruta (ej: ./Button)" data-sc-path>
+                <input class="form-input" style="flex:1" placeholder="Prop padre (ej: onClick)" data-sc-prop>
+                <button class="btn-remove" onclick="this.parentElement.remove()">×</button>
+            `;
+            document.getElementById('subcomp-list').appendChild(div);
+        };
+
+        window.generateCompoundComponent = function() {
+            const name = toPascalCase(document.getElementById('comp-comp-name').value) || 'Compuesto';
+            const wrap = document.getElementById('wrap-component').checked;
+            
+            let imports = [];
+            let jsxChildren = [];
+            
+            document.querySelectorAll('#subcomp-list .dynamic-list-row').forEach(row => {
+                const compName = row.querySelector('[data-sc-name]').value;
+                const path = row.querySelector('[data-sc-path]').value || '.';
+                const prop = row.querySelector('[data-sc-prop]').value;
+                
+                if (compName) {
+                    imports.push(`import ${compName} from '${path}';`);
+                    const propAttr = prop ? ` ${prop}={${prop}}` : '';
+                    jsxChildren.push(`      <${compName}${propAttr} />`);
+                }
+            });
+
+            let code = "'use client';\n\n";
+            code += imports.join('\n') + '\n\n';
+
+            const body = `  return (\n    <div>\n${jsxChildren.join('\n')}\n    </div>\n  );`;
+            const funcSig = `export default function ${name}({ ${document.querySelectorAll('#subcomp-list .dynamic-list-row').map(r => r.querySelector('[data-sc-prop]').value).filter(Boolean).join(', ')} }) {`;
+
+            if (wrap) {
+                code += `${funcSig}\n${body}\n}`;
+            } else {
+                code += `${funcSig}\n  // ... lógica intermedia\n${body}\n}`;
+            }
+
+            document.getElementById('generated-code').innerHTML = crearBloqueDeCodigo(code);
+        };
+
+        // --- LÓGICA ESTILOS CLSX ---
+        window.addFixedClassRow = function() {
+            const div = document.createElement('div');
+            div.className = 'dynamic-list-row';
+            div.innerHTML = `
+                <input class="form-input" placeholder="Clase fija (ej: button)" data-fc-name>
+                <button class="btn-remove" onclick="this.parentElement.remove()">×</button>
+            `;
+            document.getElementById('fixed-classes-list').appendChild(div);
+        };
+
+        window.addConditionalClassRow = function() {
+            const div = document.createElement('div');
+            div.className = 'dynamic-list-row';
+            div.innerHTML = `
+                <input class="form-input" style="flex:1" placeholder="Clase (ej: activo)" data-cc-name>
+                <input class="form-input" style="flex:1" placeholder="Condición (ej: isActive)" data-cc-cond>
+                <button class="btn-remove" onclick="this.parentElement.remove()">×</button>
+            `;
+            document.getElementById('conditional-classes-list').appendChild(div);
+        };
+
+        window.generateClsxStyles = function() {
+            const name = toPascalCase(document.getElementById('style-comp-name').value) || 'Estilizado';
+            const wrap = document.getElementById('wrap-component').checked;
+            
+            let fixedClasses = [];
+            document.querySelectorAll('#fixed-classes-list .dynamic-list-row').forEach(row => {
+                const val = row.querySelector('[data-fc-name]').value;
+                if (val) fixedClasses.push(`styles.${val}`);
+            });
+
+            let conditionalObj = [];
+            document.querySelectorAll('#conditional-classes-list .dynamic-list-row').forEach(row => {
+                const cls = row.querySelector('[data-cc-name]').value;
+                const cond = row.querySelector('[data-cc-cond]').value;
+                if (cls && cond) {
+                    conditionalObj.push(`[styles.${cls}]: ${cond}`);
+                }
+            });
+
+            let code = `import styles from './${name}.module.css';\nimport clsx from 'clsx';\n\n`;
+            
+            const classNameLogic = `clsx(\n      ${fixedClasses.join(',\n      ')}${fixedClasses.length ? ',\n' : ''}
+      {
+        ${conditionalObj.join(',\n        ')}
+      }
+    )`;
+
+            const body = `  return (\n    <div className={${classNameLogic}}>\n      Contenido\n    </div>\n  );`;
+            const funcSig = `export default function ${name}({ ${conditionalObj.map(o => o.split(':')[1].trim()).join(', ')} }) {`;
+
+            if (wrap) {
+                code += `\n${funcSig}\n${body}\n}`;
+            } else {
+                code += `\n${funcSig}\n  // ...\n${body}\n}`;
+            }
+
+            document.getElementById('generated-code').innerHTML = crearBloqueDeCodigo(code);
+        };
+
+        // ==== 7. INIT ====
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSidebar();
+            renderTeoria(TOPICS[0]);
+            
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    modoActivo = this.dataset.mode;
+                    const topicData = TOPICS.find(t => t.id === temaActivo);
+                    if (modoActivo === "teoria") {
+                        renderTeoria(topicData);
+                    } else {
+                        renderGenerador(topicData);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
