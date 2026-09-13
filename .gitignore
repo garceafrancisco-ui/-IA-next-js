@@ -1,1 +1,1 @@
-Nothing needs to be added to .gitignore since only a markdown file (README-router-nextjs.md) was added, which is a source/config file and not a build artifact, dependency, or temporary file.
+Nothing should be ignored in this case, as the only change is adding a markdown documentation file (.md), which is source content that should be tracked in version control.
