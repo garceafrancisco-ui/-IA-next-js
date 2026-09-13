@@ -2162,11 +2162,10 @@ const todosMenores = edades.every(edad => edad < 25);
             code += `}\n`;
 
             document.getElementById('generated-code').innerHTML = crearBloqueDeCodigo(code);
-        };
         }
 
         // --- LÓGICA WEBSOCKETS ---
-        else if (topic.id === "websockets") {
+        if (topic.id === "websockets") {
             html += `
                 <div class="form-section">
                     <div class="toggle-container">
