@@ -928,7 +928,731 @@ export default function CondicionalConFuncion() {
             {
                 id: "websockets",
                 nombre: "WebSockets y useSocket",
-                readmeContent: `# WebSockets y uso del hook \`useSocket\` en React\n\n## Índice\n\n1. Preparativos\n2. Introducción\n3. Configuración del Backend\n   - 3.1 Configuración inicial del servidor\n   - 3.2 Implementación de eventos Socket.IO\n4. Explicación del Frontend\n5. ¿Cómo usarlo?\n   - 5.1 Código del hook useSocket\n   - 5.2 Evento PingAll\n   - 5.3 Evento joinRoom\n   - 5.4 Evento sendMessage\n   - 5.5 Evento personalizado\n6. Cómo levantar múltiples puertos en el front\n\n---\n\n## 1. Preparativos\n\n1. Crear la carpeta \`hooks\` en el frontend dentro de \`src/\` y colocar allí el archivo \`useSocket.js\` con el código de la sección 5.1.\n2. Descargar el backend proporcionado en el classroom.\n3. Configurar en \`useSocket.js\` la IP del backend correspondiente (parámetro \`serverUrl\`).\n4. Instalar dependencias necesarias:\n\n\`\`\`bash\n# Backend (ya instalada en el back dado)\nnpm i socket.io\n\n# Frontend (NextJS)\nnpm i socket.io-client\n\`\`\`\n\n---\n\n## 2. Introducción\n\nWebSocket es un protocolo que abre un único canal de comunicación permanente entre cliente y servidor, en lugar de abrir y cerrar una conexión por cada dato que se necesita (como hace HTTP).\n\nEsto habilita:\n- **Bidireccionalidad:** Tanto el cliente como el servidor pueden enviar mensajes en cualquier momento, sin que el otro lo pida.\n- **Tiempo real:** Los datos se propagan al instante (chats, notificaciones, juegos, tableros colaborativos, subastas, etc.).\n- **Broadcast:** Un mismo evento puede difundirse a muchos clientes conectados a la vez (o solo a los de una *room* como se ve en la sección 3.2).\n\n---\n\n## 3. Configuración del Backend\n\n### 3.1 Configuración inicial del servidor\n\nEl backend requiere una configuración específica para poder manejar conexiones WebSocket junto con Express y las sesiones. Utilizamos la librería \`socket.io\`.\n\n\`\`\`javascript\nconst express = require("express");\nconst app = express();\nconst port = process.env.PORT || 4000; // Puerto por el que estoy ejecutando la página Web\nconst cors = require("cors");\nconst session = require("express-session"); // Para el manejo de las variables de sesión\n\napp.use(cors());\n\nconst server = app.listen(port, () => {\n  console.log(\`Servidor NodeJS corriendo en http://localhost:\${port}/\`);\n});\n\nconst io = require("socket.io")(server, {\n  cors: {\n    // IMPORTANTE: REVISAR PUERTO DEL FRONTEND\n    origin: ["http://localhost:3000", "http://localhost:3001"], // Permitir el origen localhost:3000\n    methods: ["GET", "POST", "PUT", "DELETE"], // Métodos permitidos\n    credentials: true, // Habilitar el envío de cookies\n  },\n});\n\nconst sessionMiddleware = session({\n  secret: "supersarasa", // Elegir tu propia key secreta\n  resave: false,\n  saveUninitialized: false,\n});\n\napp.use(sessionMiddleware);\n\nio.use((socket, next) => {\n  sessionMiddleware(socket.request, {}, next);\n});\n\`\`\`\n\n**Puntos importantes de esta configuración:**\n- **Puerto:** El servidor corre en el puerto 4000 por defecto.\n- **CORS:** Configurado para permitir conexiones desde los puertos 3000 y 3001 del frontend.\n- **Sesiones:** Integración entre Express sessions y Socket.IO para mantener estado de usuario.\n- **Middleware:** Permite acceder a las variables de sesión desde los eventos de Socket.IO.\n\n### 3.2 Implementación de eventos Socket.IO\n\nUna vez configurado el servidor, implementamos los eventos que manejarán la comunicación en tiempo real:\n\n\`\`\`javascript\n// A PARTIR DE ACÁ LOS EVENTOS DEL SOCKET\nio.on("connection", (socket) => {\n  const req = socket.request;\n\n  socket.on("joinRoom", (data) => {\n    console.log("io.on req.session.room:", req.session.room);\n    if (req.session.room != undefined && req.session.room.length > 0) {\n      socket.leave(req.session.room);\n    }\n    req.session.room = data.room;\n    socket.join(req.session.room);\n\n    io.to(req.session.room).emit("chat-messages", {\n      user: req.session.user,\n      room: req.session.room,\n    });\n  });\n\n  socket.on("pingAll", (data) => {\n    console.log("PING ALL: ", data);\n    io.emit("pingAll", { event: "Ping to all", message: data });\n  });\n\n  socket.on("sendMessage", (data) => {\n    io.to(req.session.room).emit("newMessage", {\n      room: req.session.room,\n      message: data,\n    });\n  });\n\n  socket.on("disconnect", () => {\n    console.log("Disconnect");\n  });\n});\n\`\`\`\n\n**Explicación de cada evento:**\n- **\`connection\`:** Se ejecuta automáticamente cuando un cliente se conecta.\n- **\`joinRoom\`:** Permite cambiar de sala, saliendo de la anterior y uniéndose a la nueva.\n- **\`pingAll\`:** Envía un mensaje a todos los clientes conectados.\n- **\`sendMessage\`:** Envía mensajes solo a los clientes de la misma sala.\n- **\`disconnect\`:** Se ejecuta cuando un cliente se desconecta.\n\n---\n\n## 4. Explicación del Frontend\n\nEn el backend tenemos definidos eventos, que son las acciones con las que el cliente se comunica con el servidor:\n- **\`connection\`:** Se establece automáticamente al importar el hook.\n- **\`pingAll\`:** Envía un mensaje a todos los clientes conectados.\n- **\`joinRoom\`:** Permite unirse a una sala (*room*).\n- **\`sendMessage\`:** Envía mensajes a todos los clientes de la sala.\n- **\`disconnect\`:** Se dispara automáticamente al finalizar la conexión.\n\n---\n\n## 5. ¿Cómo usarlo?\n\n### 5.1 Código del hook useSocket\n\n\`\`\`javascript\nimport { useState, useEffect, useRef } from "react";\nimport { io } from "socket.io-client";\n\nexport default function useSocket({ serverUrl = "ws://localhost:4000", options = {} } = {}) {\n  const [isConnected, setIsConnected] = useState(false);\n  const socketRef = useRef(null);\n\n  if (!socketRef.current) {\n    // Solo se crea una vez\n    socketRef.current = io(serverUrl, options);\n  }\n\n  useEffect(() => {\n    const socket = socketRef.current;\n\n    const onConnect = () => {\n      setIsConnected(true);\n      console.log("WebSocket conectado:", socket.id);\n    };\n\n    const onDisconnect = () => {\n      setIsConnected(false);\n      console.log("X WebSocket desconectado");\n    };\n\n    socket.on("connect", onConnect);\n    socket.on("disconnect", onDisconnect);\n\n    return () => {\n      socket.off("connect", onConnect);\n      socket.off("disconnect", onDisconnect);\n    };\n  }, []);\n\n  return { socket: socketRef.current, isConnected };\n}\n\`\`\`\n\n**Ejemplo creando una página nueva en el directorio \`socket\` en el frontend:**\n\n\`\`\`javascript\nimport useSocket from "@/hooks/useSocket";\nimport { useEffect } from "react";\n\nexport default function SocketPage() {\n  const { socket, isConnected } = useSocket();\n\n  useEffect(() => {\n    if (!socket) return;\n    // Aquí entrará cuando reciba un evento\n  }, [socket]);\n\n  return <h1>Socket funcionando</h1>;\n}\n\`\`\`\n\nImportando el hook y declarando \`socket\` e \`isConnected\`, al conectarnos en la página debería aparecer *"WebSocket conectado"* en la consola.\n\n### 5.2 Evento PingAll\n\nEn el frontend definimos un botón que emita el evento:\n\n\`\`\`javascript\nfunction pingAll() {\n  socket.emit("pingAll", { msg: "Hola desde mi compu" });\n}\n\`\`\`\n\nEl backend recibe el evento \`pingAll\`, lo emite a todos los clientes conectados y en el frontend debemos escuchar el evento:\n\n\`\`\`javascript\nsocket.on("pingAll", (data) => {\n  console.log(data);\n});\n\`\`\`\n\n**Ejemplo de mensaje recibido:**\n\`\`\`json\n{ "event": "pingAll", "message": { "msg": "Hola desde mi compu" } }\n\`\`\`\n\n### 5.3 Evento joinRoom\n\nPermite unirse a una sala determinada:\n\n\`\`\`javascript\nsocket.emit("joinRoom", { room: "pio" });\n\`\`\`\n\n**El backend:**\n- Sale de la sala anterior.\n- Une al cliente a la nueva sala.\n- Emite un evento \`chat-messages\` notificando que un usuario ingresó.\n\n### 5.4 Evento sendMessage\n\nCreamos un input y un botón para enviar mensajes:\n\n\`\`\`javascript\nconst [message, setMessage] = useState("");\n\nfunction sendMessage() {\n  socket.emit("sendMessage", { message });\n}\n\`\`\`\n\nEl backend recibe \`sendMessage\` y emite:\n\n\`\`\`json\n{\n  "room": "pio",\n  "message": { "message": "Mensaje a la sala" }\n}\n\`\`\`\n\nEl frontend escucha con:\n\n\`\`\`javascript\nsocket.on("newMessage", (data) => {\n  console.log(data);\n});\n\`\`\`\n\n### 5.5 Evento personalizado\n\nPodemos crear eventos propios. Ejemplo:\n\n**Backend:**\n\`\`\`javascript\nlet contador = 0;\n\nsocket.on("eventoPersonalizado", () => {\n  contador++;\n  socket.emit("respuestaPersonalizada", { contador });\n});\n\`\`\`\n\n**Frontend:**\n\`\`\`javascript\nfunction emitirEvento() {\n  socket.emit("eventoPersonalizado");\n}\n\nuseEffect(() => {\n  socket.on("respuestaPersonalizada", (data) => {\n    setContador(data.contador);\n  });\n}, [socket]);\n\`\`\`\n\n---\n\n## 6. Cómo levantar múltiples puertos en el front\n\nAbrir otra terminal y ejecutar:\n\`\`\`bash\nnpm run dev\n\`\`\`\n\nSi el puerto 3000 ya está en uso, Next levantará la app en 3001.\nEl backend está configurado para aceptar conexiones desde 3000 y 3001.\n\n### 6.1 Prueba con múltiples puertos\n\n**Abrir dos clientes:**\n- Uno en \`http://localhost:3000\`\n- Otro en \`http://localhost:3001\`\n\n**Probar:**\n- \`pingAll\` se emitirá a ambos clientes.\n- \`sendMessage\`: solo los clientes que estén en la misma sala (\`pio\`) recibirán el mensaje.\n\nCon esto finaliza la explicación y uso de \`useSocket\` en React.\n\n---\n\n## Metadata\n\n- **Docente:** Ing. Pablo Morandi\n- **Ayudante:** Matías Marchesi\n- **Curso:** 5to año\n- **Especialidad:** Informática\n- **Versión:** v2.0`,
+                readmeContent: `# WebSockets y uso del hook \`useSocket\` en React\n\n## Índice\n\n1. Preparativos
+2. Introducción
+3. Configuración del Backend
+   - 3.1 Configuración inicial del servidor
+   - 3.2 Implementación de eventos Socket.IO
+4. Explicación del Frontend
+5. ¿Cómo usarlo?
+   - 5.1 Código del hook useSocket
+   - 5.2 Evento PingAll
+   - 5.3 Evento joinRoom
+   - 5.4 Evento sendMessage
+   - 5.5 Evento personalizado
+6. Cómo levantar múltiples puertos en el front
+
+---
+
+## 1. Preparativos
+
+1. Crear la carpeta \`hooks\` en el frontend dentro de \`src/\` y colocar allí el archivo \`useSocket.js\` con el código de la sección 5.1.
+2. Descargar el backend proporcionado en el classroom.
+3. Configurar en \`useSocket.js\` la IP del backend correspondiente (parámetro \`serverUrl\`).
+4. Instalar dependencias necesarias:
+
+\`\`\`bash
+# Backend (ya instalada en el back dado)
+npm i socket.io
+
+# Frontend (NextJS)
+npm i socket.io-client
+\`\`\`
+
+---
+
+## 2. Introducción
+
+WebSocket es un protocolo que abre un único canal de comunicación permanente entre cliente y servidor, en lugar de abrir y cerrar una conexión por cada dato que se necesita (como hace HTTP).
+
+Esto habilita:
+- **Bidireccionalidad:** Tanto el cliente como el servidor pueden enviar mensajes en cualquier momento, sin que el otro lo pida.
+- **Tiempo real:** Los datos se propagan al instante (chats, notificaciones, juegos, tableros colaborativos, subastas, etc.).
+- **Broadcast:** Un mismo evento puede difundirse a muchos clientes conectados a la vez (o solo a los de una *room* como se ve en la sección 3.2).
+
+---
+
+## 3. Configuración del Backend
+
+### 3.1 Configuración inicial del servidor
+
+El backend requiere una configuración específica para poder manejar conexiones WebSocket junto con Express y las sesiones. Utilizamos la librería \`socket.io\`.
+
+\`\`\`javascript
+const express = require("express");
+const app = express();
+const port = process.env.PORT || 4000; // Puerto por el que estoy ejecutando la página Web
+const cors = require("cors");
+const session = require("express-session"); // Para el manejo de las variables de sesión
+
+app.use(cors());
+
+const server = app.listen(port, () => {
+  console.log(\`Servidor NodeJS corriendo en http://localhost:\${port}/\`);
+});
+
+const io = require("socket.io")(server, {
+  cors: {
+    // IMPORTANTE: REVISAR PUERTO DEL FRONTEND
+    origin: ["http://localhost:3000", "http://localhost:3001"], // Permitir el origen localhost:3000
+    methods: ["GET", "POST", "PUT", "DELETE"], // Métodos permitidos
+    credentials: true, // Habilitar el envío de cookies
+  },
+});
+
+const sessionMiddleware = session({
+  secret: "supersarasa", // Elegir tu propia key secreta
+  resave: false,
+  saveUninitialized: false,
+});
+
+app.use(sessionMiddleware);
+
+io.use((socket, next) => {
+  sessionMiddleware(socket.request, {}, next);
+});
+\`\`\`
+
+**Puntos importantes de esta configuración:**
+- **Puerto:** El servidor corre en el puerto 4000 por defecto.
+- **CORS:** Configurado para permitir conexiones desde los puertos 3000 y 3001 del frontend.
+- **Sesiones:** Integración entre Express sessions y Socket.IO para mantener estado de usuario.
+- **Middleware:** Permite acceder a las variables de sesión desde los eventos de Socket.IO.
+
+### 3.2 Implementación de eventos Socket.IO
+
+Una vez configurado el servidor, implementamos los eventos que manejarán la comunicación en tiempo real:
+
+\`\`\`javascript
+// A PARTIR DE ACÁ LOS EVENTOS DEL SOCKET
+io.on("connection", (socket) => {
+  const req = socket.request;
+
+  socket.on("joinRoom", (data) => {
+    console.log("io.on req.session.room:", req.session.room);
+    if (req.session.room != undefined && req.session.room.length > 0) {
+      socket.leave(req.session.room);
+    }
+    req.session.room = data.room;
+    socket.join(req.session.room);
+
+    io.to(req.session.room).emit("chat-messages", {
+      user: req.session.user,
+      room: req.session.room,
+    });
+  });
+
+  socket.on("pingAll", (data) => {
+    console.log("PING ALL: ", data);
+    io.emit("pingAll", { event: "Ping to all", message: data });
+  });
+
+  socket.on("sendMessage", (data) => {
+    io.to(req.session.room).emit("newMessage", {
+      room: req.session.room,
+      message: data,
+    });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Disconnect");
+  });
+});
+\`\`\`
+
+**Explicación de cada evento:**
+- **\`connection\`:** Se ejecuta automáticamente cuando un cliente se conecta.
+- **\`joinRoom\`:** Permite cambiar de sala, saliendo de la anterior y uniéndose a la nueva.
+- **\`pingAll\`:** Envía un mensaje a todos los clientes conectados.
+- **\`sendMessage\`:** Envía mensajes solo a los clientes de la misma sala.
+- **\`disconnect\`:** Se ejecuta cuando un cliente se desconecta.
+
+---
+
+## 4. Explicación del Frontend
+
+En el backend tenemos definidos eventos, que son las acciones con las que el cliente se comunica con el servidor:
+- **\`connection\`:** Se establece automáticamente al importar el hook.
+- **\`pingAll\`:** Envía un mensaje a todos los clientes conectados.
+- **\`joinRoom\`:** Permite unirse a una sala (*room*).
+- **\`sendMessage\`:** Envía mensajes a todos los clientes de la sala.
+- **\`disconnect\`:** Se dispara automáticamente al finalizar la conexión.
+
+---
+
+## 5. ¿Cómo usarlo?
+
+### 5.1 Código del hook useSocket
+
+\`\`\`javascript
+import { useState, useEffect, useRef } from "react";
+import { io } from "socket.io-client";
+
+export default function useSocket({ serverUrl = "ws://localhost:4000", options = {} } = {}) {
+  const [isConnected, setIsConnected] = useState(false);
+  const socketRef = useRef(null);
+
+  if (!socketRef.current) {
+    // Solo se crea una vez
+    socketRef.current = io(serverUrl, options);
+  }
+
+  useEffect(() => {
+    const socket = socketRef.current;
+
+    const onConnect = () => {
+      setIsConnected(true);
+      console.log("WebSocket conectado:", socket.id);
+    };
+
+    const onDisconnect = () => {
+      setIsConnected(false);
+      console.log("X WebSocket desconectado");
+    };
+
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+    };
+  }, []);
+
+  return { socket: socketRef.current, isConnected };
+}
+\`\`\`
+
+**Ejemplo creando una página nueva en el directorio \`socket\` en el frontend:**
+
+\`\`\`javascript
+import useSocket from "@/hooks/useSocket";
+import { useEffect } from "react";
+
+export default function SocketPage() {
+  const { socket, isConnected } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+    // Aquí entrará cuando reciba un evento
+  }, [socket]);
+
+  return <h1>Socket funcionando</h1>;
+}
+\`\`\`
+
+Importando el hook y declarando \`socket\` e \`isConnected\`, al conectarnos en la página debería aparecer *"WebSocket conectado"* en la consola.
+
+### 5.2 Evento PingAll
+
+En el frontend definimos un botón que emita el evento:
+
+\`\`\`javascript
+function pingAll() {
+  socket.emit("pingAll", { msg: "Hola desde mi compu" });
+}
+\`\`\`
+
+El backend recibe el evento \`pingAll\`, lo emite a todos los clientes conectados y en el frontend debemos escuchar el evento:
+
+\`\`\`javascript
+socket.on("pingAll", (data) => {
+  console.log(data);
+});
+\`\`\`
+
+**Ejemplo de mensaje recibido:**
+\`\`\`json
+{ "event": "pingAll", "message": { "msg": "Hola desde mi compu" } }
+\`\`\`
+
+### 5.3 Evento joinRoom
+
+Permite unirse a una sala determinada:
+
+\`\`\`javascript
+socket.emit("joinRoom", { room: "pio" });
+\`\`\`
+
+**El backend:**
+- Sale de la sala anterior.
+- Une al cliente a la nueva sala.
+- Emite un evento \`chat-messages\` notificando que un usuario ingresó.
+
+### 5.4 Evento sendMessage
+
+Creamos un input y un botón para enviar mensajes:
+
+\`\`\`javascript
+const [message, setMessage] = useState("");
+
+function sendMessage() {
+  socket.emit("sendMessage", { message });
+}
+\`\`\`
+
+El backend recibe \`sendMessage\` y emite:
+
+\`\`\`json
+{
+  "room": "pio",
+  "message": { "message": "Mensaje a la sala" }
+}
+\`\`\`
+
+El frontend escucha con:
+
+\`\`\`javascript
+socket.on("newMessage", (data) => {
+  console.log(data);
+});
+\`\`\`
+
+### 5.5 Evento personalizado
+
+Podemos crear eventos propios. Ejemplo:
+
+**Backend:**
+\`\`\`javascript
+let contador = 0;
+
+socket.on("eventoPersonalizado", () => {
+  contador++;
+  socket.emit("respuestaPersonalizada", { contador });
+});
+\`\`\`
+
+**Frontend:**
+\`\`\`javascript
+function emitirEvento() {
+  socket.emit("eventoPersonalizado");
+}
+
+useEffect(() => {
+  socket.on("respuestaPersonalizada", (data) => {
+    setContador(data.contador);
+  });
+}, [socket]);
+\`\`\`
+
+---
+
+## 6. Cómo levantar múltiples puertos en el front
+
+Abrir otra terminal y ejecutar:
+\`\`\`bash
+npm run dev
+\`\`\`
+
+Si el puerto 3000 ya está en uso, Next levantará la app en 3001.
+El backend está configurado para aceptar conexiones desde 3000 y 3001.
+
+### 6.1 Prueba con múltiples puertos
+
+**Abrir dos clientes:**
+- Uno en \`http://localhost:3000\`
+- Otro en \`http://localhost:3001\`
+
+**Probar:**
+- \`pingAll\` se emitirá a ambos clientes.
+- \`sendMessage\`: solo los clientes que estén en la misma sala (\`pio\`) recibirán el mensaje.
+
+Con esto finaliza la explicación y uso de \`useSocket\` en React.
+
+---
+
+## Metadata
+
+- **Docente:** Ing. Pablo Morandi
+- **Ayudante:** Matías Marchesi
+- **Curso:** 5to año
+- **Especialidad:** Informática
+- **Versión:** v2.0`,
+                campos: [],
+                generar: () => {}
+            },
+            {
+                id: "fetch-nextjs",
+                nombre: "Fetch en NextJS y Métodos de Array",
+                readmeContent: `# Fetch en NextJS y Métodos de Array
+
+## Índice de Navegación Rápida
+
+[1. Introducción a Fetch](#1-introducción-a-fetch) | 
+[2. Configuración del Backend](#2-configuración-del-backend) | 
+[3. Implementación de Fetch en NextJS](#3-implementación-de-fetch-en-nextjs) | 
+[4. Métodos HTTP con Fetch](#4-métodos-http-con-fetch) | 
+[5. Métodos de Array Fundamentales](#5-métodos-de-array-fundamentales)
+
+---
+
+## 1. Introducción a Fetch
+
+Fetch es la herramienta que utilizamos para realizar comunicación entre frontend y backend. Nos permite enviar y recibir datos desde nuestro servidor.
+
+### ¿Qué es Fetch?
+
+Fetch es una API nativa de JavaScript que nos permite realizar peticiones HTTP de manera asíncrona:
+
+\`\`\`javascript
+// Sintaxis básica
+fetch('http://localhost:3001/api/datos')
+  .then(response => response.json())
+  .then(data => console.log(data));
+\`\`\`
+
+### Arquitectura Frontend-Backend
+
+En nuestros proyectos tendremos dos módulos separados:
+
+\`\`\`text
+Proyecto/
+├── backend/            # Servidor Express (Puerto 3001)
+│   ├── app.js
+│   └── routes/
+└── frontend/           # Aplicación NextJS (Puerto 3000)
+    └── src/app/
+        └── components/
+\`\`\`
+
+> **Nota Importante:** Usamos puerto 3001 para el backend para evitar conflictos con NextJS que usa el puerto 3000.
+
+---
+
+## 2. Configuración del Backend
+
+### Servidor Express Básico
+
+\`\`\`javascript
+// backend/app.js
+const express = require('express');
+const cors = require('cors');
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Endpoint de ejemplo
+app.get('/saludo', (req, res) => {
+  res.json({
+    mensaje: 'Hola desde el backend!',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Endpoint con datos de ejemplo
+app.get('/estudiantes', (req, res) => {
+  const estudiantes = [
+    { id: 1, nombre: 'Juan', edad: 17, especialidad: 'Informática' },
+    { id: 2, nombre: 'María', edad: 16, especialidad: 'Química' },
+    { id: 3, nombre: 'Carlos', edad: 17, especialidad: 'Informática' },
+    { id: 4, nombre: 'Ana', edad: 16, especialidad: 'Electrónica' }
+  ];
+  res.json(estudiantes);
+});
+
+// Iniciar servidor en puerto 3001
+app.listen(3001, () => {
+  console.log('Backend ejecutándose en http://localhost:3001');
+});
+\`\`\`
+
+---
+
+## 3. Implementación de Fetch en NextJS
+
+### Hook useEffect para Fetch y uso de useState
+
+Seguimos la documentación oficial de NextJS: Client-side Data Fetching.
+
+\`\`\`javascript
+// src/app/ejemplo/page.js
+"use client"
+import { useState, useEffect } from 'react';
+
+export default function EjemploFetch() {
+  const [mensaje, setMensaje] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch al cargar el componente
+    fetch('http://localhost:3001/saludo')
+      .then(response => response.json())
+      .then(data => {
+        console.log(data); // Se muestra en consola del navegador
+        setMensaje(data.mensaje);
+        setLoading(false);
+      });
+  }, []); // Array vacío: solo se ejecuta una vez
+
+  if (loading) {
+    return <div>Cargando...</div>;
+  }
+
+  return (
+    <div>
+      <h1>Respuesta del Backend</h1>
+      <p>{mensaje}</p>
+    </div>
+  );
+}
+\`\`\`
+
+### ¿Por qué usar .then() en lugar de async/await?
+
+\`useEffect\` NO puede ser directamente \`async\`, por eso usamos \`.then()\`:
+
+\`\`\`javascript
+// ❌ Incorrecto: useEffect no puede ser async
+useEffect(async () => {
+  const response = await fetch('http://localhost:3001/saludo');
+  // Esto causará errores
+}, []);
+
+// ✔️ Correcto: Usar .then()
+useEffect(() => {
+  fetch('http://localhost:3001/saludo')
+    .then(response => response.json())
+    .then(data => console.log(data));
+}, []);
+
+// ✔️ Alternativa: Función async dentro de useEffect
+useEffect(() => {
+  const fetchData = async () => {
+    const response = await fetch('http://localhost:3001/saludo');
+    const data = await response.json();
+    console.log(data);
+  };
+  fetchData();
+}, []);
+\`\`\`
+
+---
+
+## 4. Métodos HTTP con Fetch
+
+### GET - Obtener Datos
+
+\`\`\`javascript
+// GET es el método por defecto
+fetch('http://localhost:3001/estudiantes')
+  .then(response => response.json())
+  .then(data => console.log(data));
+\`\`\`
+
+### POST - Enviar Datos
+
+\`\`\`javascript
+const crearEstudiante = () => {
+  const nuevoEstudiante = {
+    nombre: 'Pedro',
+    edad: 17,
+    especialidad: 'Informática'
+  };
+
+  fetch('http://localhost:3001/estudiantes', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(nuevoEstudiante)
+  })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Estudiante creado:', data);
+      // Actualizar la lista local
+      setEstudiantes([...estudiantes, data]);
+    });
+};
+\`\`\`
+
+### PUT - Actualizar Datos
+
+\`\`\`javascript
+const actualizarEstudiante = (id, datosActualizados) => {
+  fetch(\`http://localhost:3001/estudiantes/\${id}\`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(datosActualizados)
+  })
+    .then(response => response.json())
+    .then(data => console.log('Estudiante actualizado:', data));
+};
+\`\`\`
+
+### DELETE - Eliminar Datos
+
+\`\`\`javascript
+const eliminarEstudiante = (id) => {
+  fetch(\`http://localhost:3001/estudiantes/\${id}\`, {
+    method: 'DELETE'
+  })
+    .then(response => {
+      if (response.ok) {
+        // Remover de la lista local
+        setEstudiantes(estudiantes.filter(e => e.id !== id));
+      }
+    });
+};
+\`\`\`
+
+---
+
+## 5. Métodos de Array Fundamentales
+
+Los métodos de array son fundamentales cuando trabajamos con datos del backend. Los más utilizados son:
+
+### 5.1. map() - Transformar Elementos
+
+\`map()\` transforma cada elemento de un array y devuelve un nuevo array:
+
+\`\`\`javascript
+const numeros = [1, 2, 3, 4, 5];
+
+// Multiplicar cada número por 2
+const numerosDobles = numeros.map(numero => numero * 2);
+// Resultado: [2, 4, 6, 8, 10]
+
+// En React: Renderizar lista de estudiantes
+const estudiantesJSX = estudiantes.map(estudiante => (
+  <div key={estudiante.id}>
+    <h3>{estudiante.nombre}</h3>
+    <p>Edad: {estudiante.edad}</p>
+  </div>
+));
+\`\`\`
+
+**Ejemplo práctico con objetos:**
+
+\`\`\`javascript
+const estudiantes = [
+  { id: 1, nombre: 'Juan', edad: 17 },
+  { id: 2, nombre: 'María', edad: 16 },
+  { id: 3, nombre: 'Carlos', edad: 17 }
+];
+
+// Extraer solo los nombres
+const nombres = estudiantes.map(est => est.nombre);
+// Resultado: ['Juan', 'María', 'Carlos']
+
+// Crear objetos con información adicional
+const estudiantesConInfo = estudiantes.map(est => ({
+  ...est,
+  esAdulto: est.edad >= 18,
+  iniciales: est.nombre.charAt(0)
+}));
+\`\`\`
+
+### 5.2. filter() - Filtrar Elementos
+
+\`filter()\` devuelve un nuevo array solo con elementos que cumplan una condición:
+
+\`\`\`javascript
+const estudiantes = [
+  { id: 1, nombre: 'Juan', edad: 17, especialidad: 'Informática' },
+  { id: 2, nombre: 'María', edad: 16, especialidad: 'Química' },
+  { id: 3, nombre: 'Carlos', edad: 18, especialidad: 'Informática' }
+];
+
+// Filtrar estudiantes de Informática
+const informaticos = estudiantes.filter(est => est.especialidad === 'Informática');
+
+// Filtrar estudiantes mayores de edad
+const mayores = estudiantes.filter(est => est.edad >= 18);
+
+// Filtrar por múltiples condiciones
+const informaticosAdultos = estudiantes.filter(est =>
+  est.especialidad === 'Informática' && est.edad >= 18
+);
+\`\`\`
+
+### 5.3. find() - Encontrar un Elemento
+
+\`find()\` devuelve el primer elemento que cumple la condición:
+
+\`\`\`javascript
+const estudiantes = [
+  { id: 1, nombre: 'Juan', edad: 17 },
+  { id: 2, nombre: 'María', edad: 16 },
+  { id: 3, nombre: 'Carlos', edad: 17 }
+];
+
+// Buscar por ID
+const estudiante = estudiantes.find(est => est.id === 2);
+// Resultado: { id: 2, nombre: 'María', edad: 16 }
+
+// Buscar por nombre
+const juan = estudiantes.find(est => est.nombre === 'Juan');
+
+// Si no encuentra nada, devuelve undefined
+const inexistente = estudiantes.find(est => est.id === 999);
+// Resultado: undefined
+\`\`\`
+
+### 5.4. forEach() - Ejecutar Función para Cada Elemento
+
+\`forEach()\` ejecuta una función para cada elemento pero no devuelve nada:
+
+\`\`\`javascript
+const estudiantes = ['Juan', 'María', 'Carlos'];
+
+// Mostrar cada nombre en consola
+estudiantes.forEach(nombre => {
+  console.log(\`Estudiante: \${nombre}\`);
+});
+
+// Con índice
+estudiantes.forEach((nombre, indice) => {
+  console.log(\`\${indice + 1}. \${nombre}\`);
+});
+\`\`\`
+
+### 5.5. some() - Verificar si Algún Elemento Cumple
+
+\`some()\` devuelve \`true\` si al menos un elemento cumple la condición:
+
+\`\`\`javascript
+const edades = [15, 16, 17, 18, 19];
+
+// ¿Hay algún mayor de edad?
+const hayMayores = edades.some(edad => edad >= 18);
+// Resultado: true
+
+// ¿Hay algún menor de 15?
+const hayMenores = edades.some(edad => edad < 15);
+// Resultado: false
+\`\`\`
+
+### 5.6. every() - Verificar si Todos los Elementos Cumplen
+
+\`every()\` devuelve \`true\` si todos los elementos cumplen la condición:
+
+\`\`\`javascript
+const edades = [18, 19, 20, 21];
+
+// ¿Todos son mayores de edad?
+const todosMayores = edades.every(edad => edad >= 18);
+// Resultado: true
+
+// ¿Todos son menores de 25?
+const todosMenores = edades.every(edad => edad < 25);
+// Resultado: true
+\`\`\`
+
+> **Nota:** Existen gran cantidad de métodos array útiles según la necesidad y pueden consultarse en la web de MDN.
+
+---
+
+## Metadata
+
+- **Docente:** Ing. Pablo Morandi
+- **Ayudante:** Matías Marchesi
+- **Curso:** 5to año
+- **Especialidad:** Informática
+- **Versión:** v1.1`,
                 campos: [],
                 generar: () => {}
             }
@@ -953,6 +1677,7 @@ export default function CondicionalConFuncion() {
                 if(topic.id === 'componentes-compuestos') icon = '🏗️';
                 if(topic.id === 'estilos-clsx') icon = '🎨';
                 if(topic.id === 'websockets') icon = '🔌';
+                if(topic.id === 'fetch-nextjs') icon = '📡';
                 
                 div.innerHTML = `<span>${icon}</span> ${topic.nombre}`;
                 div.onclick = () => {
@@ -981,7 +1706,7 @@ export default function CondicionalConFuncion() {
         function renderGenerador(topic) {
             const contentElement = document.getElementById('content');
 
-            if (topic.id !== "hooks" && topic.id !== "componentes-basicos" && topic.id !== "componentes-compuestos" && topic.id !== "estilos-clsx" && topic.id !== "websockets") {
+            if (topic.id !== "hooks" && topic.id !== "componentes-basicos" && topic.id !== "componentes-compuestos" && topic.id !== "estilos-clsx" && topic.id !== "websockets" && topic.id !== "fetch-nextjs") {
                 contentElement.innerHTML = `<div class="placeholder-box"><h3>🚧 En Construcción</h3><p>El generador para este tema estará disponible pronto.</p></div>`;
                 return;
             }
