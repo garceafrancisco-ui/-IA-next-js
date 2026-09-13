@@ -2163,10 +2163,11 @@ const todosMenores = edades.every(edad => edad < 25);
 
             document.getElementById('generated-code').innerHTML = crearBloqueDeCodigo(code);
         }
+    }
 
 
-        // --- LÓGICA WEBSOCKETS ---
-        else if (topic.id === "websockets") {
+    // --- LÓGICA WEBSOCKETS ---
+    if (topic.id === "websockets") {
             html += `
                 <div class="form-section">
                     <div class="toggle-container">
@@ -2213,10 +2214,10 @@ const todosMenores = edades.every(edad => edad < 25);
                 </div>`;
                 contentElement.innerHTML = html;
                 addWebSocketEvent();
-            }
         }
+    }
 
-        // ==== 6. LÓGICA ESPECÍFICA DE GENERADORES ====
+    // ==== 6. LÓGICA ESPECÍFICA DE GENERADORES ====
 
         // --- HELPERS GENERALES ---
         function toPascalCase(str) {
