@@ -1855,11 +1855,318 @@ const todosMenores = edades.every(edad => edad < 25);
                 contentElement.innerHTML = html;
                 addFixedClassRow();
                 addConditionalClassRow();
+            } 
+
+            // --- GENERADOR FETCH NEXTJS ---
+            else if (topic.id === "fetch-nextjs") {
+                html += `
+                <div class="form-section">
+                    <h3 style="margin-bottom:1rem; color:var(--neon-blue);">📡 Generador de Fetch + Métodos de Array</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Método HTTP</label>
+                        <select class="form-input" id="fetch-method">
+                            <option value="GET">GET - Obtener datos</option>
+                            <option value="POST">POST - Crear datos</option>
+                            <option value="PUT">PUT - Actualizar datos</option>
+                            <option value="DELETE">DELETE - Eliminar datos</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">URL del Endpoint</label>
+                        <input class="form-input" type="text" id="fetch-url" placeholder="http://localhost:3001/api/usuarios" value="http://localhost:3001/api/usuarios">
+                    </div>
+
+                    <div class="form-group" id="fetch-data-group" style="display:none;">
+                        <label class="form-label">Datos a Enviar (JSON)</label>
+                        <textarea class="form-input" id="fetch-data" rows="4" placeholder='{"nombre": "Juan", "email": "juan@email.com"}'></textarea>
+                    </div>
+
+                    <div class="checkbox-group" style="margin-top:1rem;">
+                        <input type="checkbox" id="fetch-with-states" class="form-checkbox" checked>
+                        <label for="fetch-with-states">Incluir useState para datos y loading</label>
+                    </div>
+
+                    <div class="checkbox-group" style="margin-top:0.5rem;">
+                        <input type="checkbox" id="fetch-with-error" class="form-checkbox" checked>
+                        <label for="fetch-with-error">Incluir manejo de errores</label>
+                    </div>
+
+                    <hr style="border-color:var(--border-color); margin:1.5rem 0;">
+
+                    <h4 style="color:var(--neon-purple); margin-bottom:1rem;">🔧 Procesar Respuesta con Métodos de Array</h4>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Método de Array a Aplicar</label>
+                        <select class="form-input" id="array-method">
+                            <option value="none">Ninguno (datos crudos)</option>
+                            <option value="map">map() - Transformar cada elemento</option>
+                            <option value="filter">filter() - Filtrar elementos</option>
+                            <option value="find">find() - Encontrar primer elemento</option>
+                            <option value="forEach">forEach() - Iterar sin retorno</option>
+                            <option value="some">some() - Verificar si alguno cumple</option>
+                            <option value="every">every() - Verificar si todos cumplen</option>
+                            <option value="reduce">reduce() - Reducir a un valor</option>
+                        </select>
+                    </div>
+
+                    <div id="array-options-container"></div>
+
+                    <button type="button" class="btn-primary" onclick="generateFetchCode()">Generar Código</button>
+                    <div id="generated-code"></div>
+                </div>`;
+                contentElement.innerHTML = html;
+                
+                // Mostrar/ocultar campo de datos según método HTTP
+                document.getElementById('fetch-method').addEventListener('change', function() {
+                    const dataGroup = document.getElementById('fetch-data-group');
+                    if (this.value === 'POST' || this.value === 'PUT') {
+                        dataGroup.style.display = 'block';
+                    } else {
+                        dataGroup.style.display = 'none';
+                    }
+                });
+
+                // Mostrar opciones según método de array
+                document.getElementById('array-method').addEventListener('change', renderArrayOptions);
+                renderArrayOptions();
+            }
+        }
+
+        // --- LÓGICA FETCH NEXTJS ---
+        function renderArrayOptions() {
+            const method = document.getElementById('array-method').value;
+            const container = document.getElementById('array-options-container');
+            
+            if (method === 'none') {
+                container.innerHTML = '';
+                return;
             }
 
-            // --- GENERADOR WEBSOCKETS ---
-            else if (topic.id === "websockets") {
-                html += `
+            let optionsHtml = '';
+
+            if (method === 'map') {
+                optionsHtml = `
+                    <div class="form-group" style="margin-top:1rem;">
+                        <label class="form-label">Propiedad a Extraer (opcional)</label>
+                        <input class="form-input" type="text" id="array-map-prop" placeholder="ej: nombre, id, email">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Transformación (descripción)</label>
+                        <input class="form-input" type="text" id="array-map-transform" placeholder="ej: convertir a mayúsculas, sumar 10%">
+                    </div>
+                `;
+            } else if (method === 'filter') {
+                optionsHtml = `
+                    <div class="form-group" style="margin-top:1rem;">
+                        <label class="form-label">Condición de Filtrado</label>
+                        <input class="form-input" type="text" id="array-filter-cond" placeholder="ej: edad > 18, activo === true">
+                    </div>
+                `;
+            } else if (method === 'find') {
+                optionsHtml = `
+                    <div class="form-group" style="margin-top:1rem;">
+                        <label class="form-label">Condición de Búsqueda</label>
+                        <input class="form-input" type="text" id="array-find-cond" placeholder="ej: id === 5, nombre === 'Juan'">
+                    </div>
+                `;
+            } else if (method === 'some' || method === 'every') {
+                optionsHtml = `
+                    <div class="form-group" style="margin-top:1rem;">
+                        <label class="form-label">Condición a Verificar</label>
+                        <input class="form-input" type="text" id="array-verify-cond" placeholder="ej: edad >= 18, activo === true">
+                    </div>
+                `;
+            } else if (method === 'reduce') {
+                optionsHtml = `
+                    <div class="form-group" style="margin-top:1rem;">
+                        <label class="form-label">Valor Inicial del Acumulador</label>
+                        <input class="form-input" type="text" id="array-reduce-initial" placeholder="ej: 0, [], {}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Operación de Reducción</label>
+                        <input class="form-input" type="text" id="array-reduce-op" placeholder="ej: sumar edades, concatenar nombres">
+                    </div>
+                `;
+            }
+
+            container.innerHTML = optionsHtml;
+        }
+
+        window.generateFetchCode = function() {
+            const method = document.getElementById('fetch-method').value;
+            const url = document.getElementById('fetch-url').value || 'http://localhost:3001/api/datos';
+            const dataStr = document.getElementById('fetch-data').value;
+            const withStates = document.getElementById('fetch-with-states').checked;
+            const withError = document.getElementById('fetch-with-error').checked;
+            const arrayMethod = document.getElementById('array-method').value;
+
+            let code = `'use client';\n\n`;
+            code += `import { useEffect, useState } from 'react';\n\n`;
+
+            // Estados
+            if (withStates) {
+                code += `export default function Component() {\n`;
+                code += `  const [datos, setDatos] = useState([]);\n`;
+                code += `  const [loading, setLoading] = useState(true);\n`;
+                if (withError) {
+                    code += `  const [error, setError] = useState(null);\n`;
+                }
+                code += `\n`;
+            } else {
+                code += `export default function Component() {\n`;
+            }
+
+            // Función de fetch
+            code += `  const obtenerDatos = async () => {\n`;
+            code += `    try {\n`;
+            code += `      ${withStates ? 'setLoading(true);\n' : ''}`;
+            if (withError) {
+                code += `      setError(null);\n`;
+            }
+
+            // Configuración del fetch
+            if (method === 'GET') {
+                code += `\n      const response = await fetch('${url}');\n`;
+            } else {
+                code += `\n      const response = await fetch('${url}', {\n`;
+                code += `        method: '${method}',\n`;
+                code += `        headers: {\n`;
+                code += `          'Content-Type': 'application/json',\n`;
+                code += `        },\n`;
+                if (dataStr.trim()) {
+                    code += `        body: JSON.stringify(${dataStr}),\n`;
+                } else {
+                    code += `        body: JSON.stringify({}),\n`;
+                }
+                code += `      });\n`;
+            }
+
+            code += `\n      if (!response.ok) {\n`;
+            code += `        throw new Error(\`Error \${response.status}: \${response.statusText}\`);\n`;
+            code += `      }\n\n`;
+            code += `      const resultado = await response.json();\n`;
+
+            // Procesamiento con métodos de array
+            if (arrayMethod !== 'none') {
+                code += `\n      // Procesar con ${arrayMethod}()\n`;
+                
+                if (arrayMethod === 'map') {
+                    const prop = document.getElementById('array-map-prop').value;
+                    const transform = document.getElementById('array-map-transform').value || 'transformar';
+                    if (prop) {
+                        code += `      const procesados = resultado.map(item => item.${prop});\n`;
+                    } else {
+                        code += `      const procesados = resultado.map(item => {\n`;
+                        code += `        // ${transform}\n`;
+                        code += `        return { ...item }; // Modificar según necesidad\n`;
+                        code += `      });\n`;
+                    }
+                    code += `      ${withStates ? 'setDatos(procesados);' : 'console.log("Datos procesados:", procesados);'}\n`;
+                }
+                else if (arrayMethod === 'filter') {
+                    const cond = document.getElementById('array-filter-cond').value || 'item.activo === true';
+                    code += `      const filtrados = resultado.filter(item => ${cond});\n`;
+                    code += `      ${withStates ? 'setDatos(filtrados);' : 'console.log("Datos filtrados:", filtrados);'}\n`;
+                }
+                else if (arrayMethod === 'find') {
+                    const cond = document.getElementById('array-find-cond').value || 'item.id === 1';
+                    code += `      const encontrado = resultado.find(item => ${cond});\n`;
+                    code += `      ${withStates ? 'setDatos(encontrado);' : 'console.log("Elemento encontrado:", encontrado);'}\n`;
+                }
+                else if (arrayMethod === 'forEach') {
+                    code += `      resultado.forEach((item, index) => {\n`;
+                    code += `        console.log(\`Item \${index}:\`, item);\n`;
+                    code += `        // Procesar cada elemento\n`;
+                    code += `      });\n`;
+                    code += `      ${withStates ? 'setDatos(resultado);' : ''}\n`;
+                }
+                else if (arrayMethod === 'some') {
+                    const cond = document.getElementById('array-verify-cond').value || 'item.activo === true';
+                    code += `      const hayActivos = resultado.some(item => ${cond});\n`;
+                    code += `      ${withStates ? '' : 'console.log("¿Hay elementos que cumplen?", hayActivos);'}\n`;
+                    if (withStates) {
+                        code += `      setDatos({ ...resultado, hayActivos });\n`;
+                    }
+                }
+                else if (arrayMethod === 'every') {
+                    const cond = document.getElementById('array-verify-cond').value || 'item.activo === true';
+                    code += `      const todosActivos = resultado.every(item => ${cond});\n`;
+                    code += `      ${withStates ? '' : 'console.log("¿Todos cumplen?", todosActivos);'}\n`;
+                    if (withStates) {
+                        code += `      setDatos({ ...resultado, todosActivos });\n`;
+                    }
+                }
+                else if (arrayMethod === 'reduce') {
+                    const initial = document.getElementById('array-reduce-initial').value || '0';
+                    const op = document.getElementById('array-reduce-op').value || 'acumular';
+                    code += `      const reducido = resultado.reduce((acc, item) => {\n`;
+                    code += `        // ${op}\n`;
+                    code += `        return acc; // Modificar según necesidad\n`;
+                    code += `      }, ${initial});\n`;
+                    code += `      ${withStates ? 'setDatos(reducido);' : 'console.log("Resultado reducido:", reducido);'}\n`;
+                }
+            } else {
+                code += `      ${withStates ? 'setDatos(resultado);' : 'console.log("Datos obtenidos:", resultado);'}\n`;
+            }
+
+            code += `\n    } catch (err) {\n`;
+            if (withError) {
+                code += `      ${withStates ? 'setError(err.message);' : 'console.error("Error:", err);'}\n`;
+            } else {
+                code += `      console.error("Error en fetch:", err);\n`;
+            }
+            code += `    } finally {\n`;
+            if (withStates) {
+                code += `      setLoading(false);\n`;
+            }
+            code += `    }\n`;
+            code += `  };\n\n`;
+
+            // useEffect
+            code += `  useEffect(() => {\n`;
+            code += `    obtenerDatos();\n`;
+            code += `  }, []);\n\n`;
+
+            // Render condicional
+            if (withStates) {
+                code += `  if (loading) return <div>Cargando...</div>;\n`;
+                if (withError) {
+                    code += `  if (error) return <div>Error: {error}</div>;\n`;
+                }
+                code += `\n`;
+                code += `  return (\n`;
+                code += `    <div>\n`;
+                code += `      <h2>Datos Obtenidos</h2>\n`;
+                code += `      {Array.isArray(datos) ? (\n`;
+                code += `        <ul>\n`;
+                code += `          {datos.map((item, index) => (\n`;
+                code += `            <li key={index}>{JSON.stringify(item)}</li>\n`;
+                code += `          ))}\n`;
+                code += `        </ul>\n`;
+                code += `      ) : (\n`;
+                code += `        <p>{JSON.stringify(datos)}</p>\n`;
+                code += `      )}\n`;
+                code += `    </div>\n`;
+                code += `  );\n`;
+            } else {
+                code += `  return (\n`;
+                code += `    <div>\n`;
+                code += `      <h2>Componente Fetch</h2>\n`;
+                code += `      <p>Revisa la consola para ver los datos</p>\n`;
+                code += `    </div>\n`;
+                code += `  );\n`;
+            }
+
+            code += `}\n`;
+
+            document.getElementById('generated-code').innerHTML = crearBloqueDeCodigo(code);
+        };
+
+        // --- LÓGICA WEBSOCKETS ---
+        else if (topic.id === "websockets") {
+            html += `
                 <div class="form-section">
                     <div class="toggle-container">
                         <span style="color:var(--text-secondary); font-size:0.9rem;">Incluir configuración del servidor</span>
