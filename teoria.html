@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📘 DAI — Teoría (offline)</title>
+<style>
+/* ============ NEÓN CLÁSICO — variables y base ============ */
+:root{
+  --bg:#07030f; --bg2:#0d0620;
+  --neon-cyan:#00f0ff;   /* FRONT */
+  --neon-magenta:#ff2bd6;/* BACK */
+  --neon-green:#39ff14;
+  --neon-violet:#b026ff;
+  --neon-yellow:#fff200;
+  --txt:#e8e6f0; --dim:#a9a3c2;
+  --panel:#0b0518; --code-bg:#050308;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+  font-family:'Segoe UI', system-ui, sans-serif;}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    linear-gradient(rgba(0,240,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,43,214,.05) 1px, transparent 1px),
+    radial-gradient(ellipse at 50% -10%, #1a0b35 0%, var(--bg2) 45%, var(--bg) 100%);
+  background-size:34px 34px, 34px 34px, 100% 100%;}
+.wrap{max-width:1400px;margin:0 auto;padding:0 14px 60px}
+
+/* título cartel de neón */
+.app-title{font-size:clamp(20px,3.2vw,30px);letter-spacing:.12em;color:var(--neon-cyan);
+  text-shadow:0 0 6px var(--neon-cyan),0 0 16px rgba(0,240,255,.55);margin:14px 0 4px;font-weight:800;}
+.app-sub{color:var(--dim);font-size:12.5px;margin:0 0 10px}
+@media (prefers-reduced-motion: no-preference){
+  .flicker{animation:flick 5s infinite steps(1,end)}
+  @keyframes flick{0%,92%,96%,100%{opacity:1}93%{opacity:.55}94%{opacity:.85}97%{opacity:.7}}
+}
+@media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
+
+/* barra superior */
+.topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;border:1px solid var(--neon-violet);
+  border-radius:10px;padding:10px 12px;background:rgba(11,5,24,.7);box-shadow:0 0 6px rgba(176,38,255,.4), inset 0 0 14px rgba(176,38,255,.08)}
+.main-tabs{display:flex;gap:8px}
+.mtab{background:transparent;border:1px solid var(--dim);color:var(--txt);padding:9px 18px;
+  border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.05em}
+.mtab.active{border-color:var(--neon-cyan);color:var(--neon-cyan);
+  box-shadow:0 0 6px var(--neon-cyan), inset 0 0 10px rgba(0,240,255,.15);text-shadow:0 0 6px rgba(0,240,255,.7)}
+.searchbox{flex:1;min-width:180px;display:flex;align-items:center;gap:8px}
+.searchbox input{width:100%;background:var(--panel);border:1px solid var(--dim);color:var(--txt);
+  padding:9px 12px;border-radius:8px;font-size:14px}
+.searchbox input:focus-visible{outline:none;border-color:var(--neon-yellow);box-shadow:0 0 6px var(--neon-yellow)}
+.optgroup{display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:13.5px;color:var(--dim)}
+.optgroup label{display:flex;gap:5px;align-items:center;cursor:pointer;white-space:nowrap}
+input[type=checkbox]{accent-color:var(--neon-green);width:15px;height:15px;cursor:pointer}
+.legend{display:flex;gap:10px;align-items:center;font-size:12.5px}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:800;letter-spacing:.06em}
+.badge.back{color:var(--neon-magenta);border:1px solid var(--neon-magenta);box-shadow:0 0 6px rgba(255,43,214,.5)}
+.badge.front{color:var(--neon-cyan);border:1px solid var(--neon-cyan);box-shadow:0 0 6px rgba(0,240,255,.5)}
+
+/* layout con sidebar */
+.layout{display:grid;grid-template-columns:250px 1fr;gap:16px;margin-top:16px}
+.sidebar{display:flex;flex-direction:column;gap:6px;position:sticky;top:10px;align-self:start;max-height:calc(100vh - 20px);overflow:auto}
+.side-label{font-size:11px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin:6px 2px 2px}
+.sbtn{display:block;width:100%;text-align:left;background:transparent;border:1px solid transparent;
+  color:var(--txt);padding:8px 10px;border-radius:8px;font-size:13.5px;cursor:pointer;line-height:1.3}
+.sbtn:hover{border-color:var(--neon-violet);box-shadow:0 0 6px rgba(176,38,255,.5)}
+.sbtn.active{border-color:var(--neon-cyan);color:var(--neon-cyan);box-shadow:0 0 6px rgba(0,240,255,.45);background:rgba(0,240,255,.05)}
+select.mobilenav{display:none;width:100%;background:var(--panel);color:var(--txt);border:1px solid var(--neon-violet);border-radius:8px;padding:10px;font-size:14px}
+
+/* tarjetas de contenido */
+.card{border:1px solid var(--neon-violet);border-radius:12px;padding:16px 18px;margin-bottom:16px;
+  background:rgba(11,5,24,.72);box-shadow:0 0 6px rgba(176,38,255,.28), inset 0 0 22px rgba(176,38,255,.05)}
+.card h2{margin:0 0 8px;color:var(--neon-cyan);font-size:21px;text-shadow:0 0 6px rgba(0,240,255,.6)}
+.card h3{color:var(--neon-yellow);font-size:16px;margin:16px 0 6px;text-shadow:0 0 5px rgba(255,242,0,.35)}
+.card p,.card li{line-height:1.55;font-size:14.5px;color:var(--txt)}
+.card ul{margin:6px 0;padding-left:22px}
+.hint{color:var(--dim);font-size:12.5px}
+mark{background:var(--neon-yellow);color:#000;padding:0 2px;border-radius:3px}
+.warn-list li{margin-bottom:7px}
+table.neon-table{border-collapse:collapse;width:100%;margin:8px 0;font-size:13.5px}
+.neon-table th{color:var(--neon-cyan);border-bottom:1px solid var(--neon-cyan);padding:6px 8px;text-align:left;white-space:nowrap}
+.neon-table td{border-bottom:1px solid rgba(169,163,194,.22);padding:6px 8px;vertical-align:top}
+pre.inline-code, code{font-family:Consolas,'Courier New',monospace}
+.card :not(pre) > code{background:#160a2b;border:1px solid rgba(176,38,255,.4);border-radius:5px;padding:1px 5px;font-size:12.8px;color:#aef7ff}
+
+/* bloques de código */
+.codeblock{border:1px solid var(--neon-cyan);border-radius:10px;margin:10px 0;overflow:hidden;box-shadow:0 0 6px rgba(0,240,255,.25)}
+.codeblock.back-border{border-color:var(--neon-magenta);box-shadow:0 0 6px rgba(255,43,214,.28)}
+.code-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:7px 10px;background:#120826;border-bottom:1px solid rgba(0,240,255,.25)}
+.code-title{font-weight:700;font-size:13px;color:var(--txt)}
+.code-file{font-family:Consolas,'Courier New',monospace;font-size:12px;color:var(--neon-yellow)}
+.btn-copy{margin-left:auto;background:transparent;color:var(--neon-green);border:1px solid var(--neon-green);
+  border-radius:7px;padding:5px 12px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn-copy:hover,.btn-copy:focus-visible{box-shadow:0 0 8px var(--neon-green);outline:none}
+pre.code{margin:0;padding:12px 14px;background:var(--code-bg);color:#e8f6fa;
+  font-family:Consolas,'Courier New',monospace;font-size:12.6px;line-height:1.5;
+  overflow:auto;white-space:pre;tab-size:2;max-height:520px}
+
+/* generador: acordeón + split */
+.gen-desc{color:var(--dim);font-size:13.5px;margin:2px 0 10px}
+.gitem{border:1px solid var(--dim);border-radius:10px;margin-bottom:10px;overflow:hidden;background:rgba(11,5,24,.6)}
+.gitem.open{border-color:var(--neon-cyan);box-shadow:0 0 8px rgba(0,240,255,.35)}
+.ghead{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;cursor:pointer;gap:10px}
+.gtitle{font-weight:700;font-size:14.5px;color:var(--txt)}
+.gitem.open .gtitle{color:var(--neon-cyan);text-shadow:0 0 5px rgba(0,240,255,.5)}
+.gbody{display:none;padding:6px 14px 14px}
+.gitem.open .gbody{display:block}
+.gen-split{display:grid;grid-template-columns:minmax(260px,380px) 1fr;gap:16px}
+.gen-fields{display:flex;flex-direction:column;gap:10px}
+.field label{display:block;font-size:12.8px;color:var(--dim);margin-bottom:3px}
+.field input[type=text],.field input[type=number],.field select,.field textarea{
+  width:100%;background:var(--panel);border:1px solid var(--dim);color:var(--txt);
+  border-radius:7px;padding:9px 10px;font-size:14px;font-family:inherit}
+.field textarea{font-family:Consolas,'Courier New',monospace;font-size:12.8px;resize:vertical}
+.field input:focus-visible,.field select:focus-visible,.field textarea:focus-visible{
+  outline:none;border-color:var(--neon-cyan);box-shadow:0 0 6px rgba(0,240,255,.5)}
+.field.check{display:flex;gap:8px;align-items:center}
+.field.check label{margin:0;font-size:13.5px;color:var(--txt)}
+.field-help{font-size:11.5px;color:var(--dim);margin-top:2px}
+.field-error{font-size:11.5px;color:var(--neon-yellow);margin-top:2px}
+.gen-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.btn-reset{background:transparent;border:1px solid var(--neon-violet);color:var(--neon-violet);
+  border-radius:7px;padding:6px 12px;font-size:12.5px;cursor:pointer;font-weight:700}
+.btn-reset:hover{box-shadow:0 0 8px rgba(176,38,255,.6)}
+.btn-copyall{background:transparent;border:1px solid var(--neon-green);color:var(--neon-green);
+  border-radius:7px;padding:6px 12px;font-size:12.5px;cursor:pointer;font-weight:700}
+.btn-copyall:hover{box-shadow:0 0 8px var(--neon-green)}
+.gen-result{min-width:0}
+.empty{color:var(--dim);font-style:italic;padding:14px}
+
+/* mapa de carpetas interactivo */
+.tree{font-family:Consolas,'Courier New',monospace;font-size:12.8px;line-height:1.75;background:var(--code-bg);
+  border:1px solid var(--dim);border-radius:10px;padding:14px 16px;overflow-x:auto;white-space:pre}
+.tline{display:block;cursor:default;border-radius:4px;padding:0 4px}
+.tline.clickable{cursor:pointer}
+.tline.clickable:hover{background:rgba(0,240,255,.08);outline:1px solid rgba(0,240,255,.35)}
+.tline.sel{background:rgba(255,242,0,.1);outline:1px solid var(--neon-yellow)}
+.t-back{color:var(--neon-magenta)} .t-front{color:var(--neon-cyan)} .t-plain{color:var(--dim)}
+.tree-info{border:1px dashed var(--neon-yellow);border-radius:10px;padding:10px 14px;margin-top:10px;font-size:13.5px;min-height:44px}
+
+/* diagrama de flujo */
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.fbox{border:1px solid var(--neon-cyan);color:var(--neon-cyan);border-radius:9px;padding:9px 13px;
+  font-size:13px;font-weight:700;box-shadow:0 0 6px rgba(0,240,255,.4);background:#0a0418}
+.fbox.back{border-color:var(--neon-magenta);color:var(--neon-magenta);box-shadow:0 0 6px rgba(255,43,214,.4)}
+.farrow{color:var(--neon-green);font-weight:800;font-size:13px;text-shadow:0 0 5px rgba(57,255,20,.5)}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:#0a1a0a;border:1px solid var(--neon-green);color:var(--neon-green);padding:10px 22px;
+  border-radius:9px;font-weight:800;font-size:14px;box-shadow:0 0 12px rgba(57,255,20,.6);
+  transition:opacity .18s, transform .18s;pointer-events:none;z-index:99}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* responsive */
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{display:none;position:static;max-height:none}
+  select.mobilenav{display:block}
+  .gen-split{grid-template-columns:1fr}
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="app-title flicker">⚡ SÚPER ARCHIVO DAI</h1>
+  <p class="app-sub">5ta Informática · Instituto Pío IX · Sección 📘 TEORÍA — funciona 100% offline (doble clic). Atajo: <b>/</b> busca.</p>
+
+  <div class="topbar">
+    <div class="main-tabs" role="tablist">
+      <a class="mtab active" href="teoria.html">📘 TEORÍA</a>
+      <a class="mtab" href="generador.html">⚡ GENERADOR</a>
+    </div>
+    <span class="legend"><span class="badge back">🟣 BACK</span><span class="badge front">🔵 FRONT</span></span>
+    <div class="searchbox">
+      <input id="buscador" type="text" placeholder="🔍 Buscar temas y contenido… (tocá / para enfocar)" autocomplete="off">
+    </div>
+  </div>
+
+  <select id="mobileNav" class="mobilenav" aria-label="Elegir tema"></select>
+
+  <div class="layout">
+    <nav id="sidebar" class="sidebar" aria-label="Temas"></nav>
+    <main id="content"></main>
+  </div>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   📘 DAI — Teoría (offline) — un solo HTML, sin CDN, sin servidor.
+   Motor genérico abajo; los DATOS están en las constantes marcadas.
+   ===================================================================== */
+
+
+// ---------- helpers usados por los generadores (no tocar) ----------
+function L(lines){ return lines.join("\n"); }                       // R6: array de líneas → string
+function q(opt, s){
+  const c=(opt&&opt.doubles===false)?"'":'"';
+  let v=String(s==null?"":s).trim();
+  if(v.startsWith("{") && v.endsWith("}")) return v;      // expresión JS: va sin comillas
+  v=v.replace(/["']/g,"");                                 // sin comillas internas
+  const num=/^-?\d+(\.\d+)?$/.test(v);
+  return num ? "{"+v+"}" : c+v+c;                          // números van en { }
+}
+function cmt(opt, t){ return (opt&&opt.comentarios===false) ? null : "// "+t; }
+function withC(arr){ return arr.filter(x=>x!==null); }              // saca los comentarios desactivados
+function pascal(s){ return String(s||"").trim().split(/[^A-Za-z0-9]+/).filter(Boolean).map(w=>w[0].toUpperCase()+w.slice(1)).join(""); }
+function camel(s){ const p=pascal(s); return p? p[0].toLowerCase()+p.slice(1):""; }
+function setterName(s){ return "set"+pascal(s); }
+function splitList(s){ return String(s||"").split(",").map(x=>x.trim()).filter(Boolean); }
+function parseLines(s){ return String(s||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean); }
+function normKey(s){ return String(s||"").trim().replace(/[^A-Za-z0-9_]/g,"").replace(/^(\d)/,"_$1"); }
+function esc0(s){ return String(s==null?"":s); }
+function cmpExpr(ref, op, val){
+  const vv=String(val||"").trim();
+  const esNum=/^-?\d+(\.\d+)?$/.test(vv) || vv==="true" || vv==="false";
+  const lit = esNum? vv : q({dobles:true}, vv);
+  if(op==="includes") return ref+".includes("+lit+")";
+  if(op==="===") return ref+" === "+lit;
+  if(op==="==") return ref+" == "+lit;
+  return ref+" "+op+" "+vv;
+}
+function descMetodo(m){
+  return ({push:"navega guardando historial",replace:"navega SIN guardar historial",back:"vuelve atrás",forward:"avanza",refresh:"recarga la página"})[m]||m;
+}
+function pushLista(arr, st, opt, pad){
+  // renderiza la <ul> interna de una lista (respeta Modo TP1)
+  if(opt.tp1){
+    arr.push(pad+"{itemsJSX} {/* Modo TP1: armá itemsJSX con forEach + push (ver generador Métodos de array) */}");
+  } else {
+    arr.push(pad+"{"+st+".map(item => (");
+    arr.push(pad+"  <li key={item.id}>{item.nombre}</li>");
+    arr.push(pad+"))}");
+  }
+}
+function pushMsgList(arr, opt, pad, expr){
+  // lista de mensajes: .map normally; Modo TP1 → itemsJSX con forEach + push (sin map/filter/find)
+  const e = expr || "{JSON.stringify(m)}";
+  if(opt.tp1){
+    arr.push("  let itemsJSX = [];");
+    arr.push("  mensajes.forEach((m, i) => {");
+    arr.push("    itemsJSX.push(<li key={i}>"+e+"</li>);");
+    arr.push("  });", "");
+    arr.push(pad+"{itemsJSX}");
+  } else {
+    arr.push(pad+"{mensajes.map((m, i) => (");
+    arr.push(pad+"  <li key={i}>"+e+"</li>");
+    arr.push(pad+"))}");
+  }
+}
+
+
+// =====================================================================
+// ---------- MAPA
+
+// =====================================================================
+// ---------- MAPA DE CARPETAS (datos del "🗺️ Mapa de carpetas") --------
+// =====================================================================
+const MAPA_CARPETAS = {
+  intro:"Árbol exacto del proyecto real del TP2 (Pio Socket). Cada archivo es clickeable: hace clic para ver qué va adentro. 🟣 magenta = BACK · 🔵 cyan = FRONT.",
+  tree:[
+    { line:"PROYECTO/", side:"plain" },
+    { line:"├── backend/                      ← 🟣 BACK  (Node + Express + Socket.IO, puerto 4000)", side:"back", path:"backend/", info:"Carpeta del servidor Node.js. Se inicia con npm init -y y vive aparte del front. Puerto 4000 para sockets (TP2/Integrador) o 3001 para fetch puro." },
+    { line:"│   ├── .gitignore                  (excluir node_modules y *.env)", side:"back", path:"backend/.gitignore", info:"Debe excluir node_modules/ y los archivos *.env (secretos)." },
+    { line:"│   ├── index.js                    servidor, CORS, sesiones, eventos de socket", side:"back", path:"backend/index.js", info:"El servidor entero: express(), cors(), express-session(), server en el puerto, io(server, {cors}) y io.on(\"connection\") con joinRoom / pingAll / sendMessage / disconnect. ⚠️ En el apunte de fetch se llama app.js; es lo mismo, elegí uno." },
+    { line:"│   ├── package.json", side:"back", path:"backend/package.json", info:"Dependencias del back: express, cors, socket.io, express-session, mysql2 (TP Integrador)." },
+    { line:"│   ├── package-lock.json", side:"back", path:"backend/package-lock.json", info:"Lock automático de npm. No lo tocás." },
+    { line:"│   ├── README.md", side:"back", path:"backend/README.md", info:"Instrucciones para correr el back." },
+    { line:"│   └── modulos/", side:"back" },
+    { line:"│       └── mysql.js                (solo TP Integrador: conexión a MySQL)", side:"back", path:"backend/modulos/mysql.js", info:"Crea el pool de mysql2/promise (host, user, password, database) y lo exporta con module.exports = pool. Lo importan los endpoints." },
+    { line:"├── frontend/                     ← 🔵 FRONT (Next.js App Router, puerto 3000 / 3001)", side:"front", path:"frontend/", info:"Proyecto Next.js creado con npx create-next-app@latest. Dev normal en 3000; con dev:a/dev:b se levantan dos instancias (3000 y 3001)." },
+    { line:"│   ├── .gitignore                  (excluir node_modules, .next y .next*)", side:"front", path:"frontend/.gitignore", info:"Ojo: con múltiples instancias hay que reemplazar .next/ por .next* para ignorar también .next-a y .next-b." },
+    { line:"│   ├── eslint.config.mjs", side:"front", path:"frontend/eslint.config.mjs", info:"Config de ESLint que trae create-next-app." },
+    { line:"│   ├── jsconfig.json", side:"front", path:"frontend/jsconfig.json", info:"Define el alias @/* → src/* (por eso importás @/components/Button)." },
+    { line:"│   ├── next.config.mjs", side:"front", path:"frontend/next.config.mjs", info:"Config de Next. Para múltiples instancias agregar: distDir: process.env.NEXT_DIST_DIR || \".next\"." },
+    { line:"│   ├── package.json", side:"front", path:"frontend/package.json", info:"Acá van los scripts dev:a / dev:b (cross-env) y las deps socket.io-client, clsx, reactjs-popup." },
+    { line:"│   ├── package-lock.json", side:"front" },
+    { line:"│   ├── README.md", side:"front" },
+    { line:"│   ├── public/                     imágenes y archivos estáticos", side:"front", path:"frontend/public/", info:"Imágenes/fuentes servidas desde la raíz: /logo.png se usa como <img src=\"/logo.png\">." },
+    { line:"│   └── src/", side:"front" },
+    { line:"│       ├── app/                    ← cada CARPETA = una RUTA", side:"front", path:"src/app/", info:"App Router: la carpeta define la URL. src/app/page.js = \"/\", src/app/chat/page.js = \"/chat\". Cada page.js export default un componente." },
+    { line:"│       │   ├── favicon.ico", side:"front" },
+    { line:"│       │   ├── globals.css", side:"front", path:"src/app/globals.css", info:"CSS global: se importa en layout.js y aplica a todo el sitio." },
+    { line:"│       │   ├── layout.js           layout raíz (recibe children)", side:"front", path:"src/app/layout.js", info:"Envuelve TODAS las páginas. Recibe { children } y renderiza <html><body>{children}</body></html>. Es Server Component por defecto (no lleva hooks)." },
+    { line:"│       │   ├── page.js             ruta \"/\"", side:"front", path:"src/app/page.js", info:"La home. Acá se arma el formulario con los links (usuario + sala → router.push(\"/chat?...\"))." },
+    { line:"│       │   ├── page.module.css", side:"front", path:"src/app/page.module.css", info:"Estilos de la home (en TP1 el docente provee Home.module.css y va ACÁ con ese nombre)." },
+    { line:"│       │   ├── socket/", side:"front" },
+    { line:"│       │   │   └── page.js         ruta \"/socket\"", side:"front", path:"src/app/socket/page.js", info:"Página de prueba del WebSocket: muestra isConnected con ternario, botón pingAll con socket.emit y escucha con socket.on dentro de useEffect([socket]). Lleva \"use client\"." },
+    { line:"│       │   └── chat/", side:"front" },
+    { line:"│       │       └── page.js         ruta \"/chat\"", side:"front", path:"src/app/chat/page.js", info:"Chat: lee sala y usuario con useSearchParams, hace socket.emit(\"joinRoom\", { room }), input+botón sendMessage, escucha newMessage y chat-messages, cleanup con socket.off." },
+    { line:"│       ├── components/             Button.js, Title.js, Form.js, etc. (+ sus .module.css)", side:"front", path:"src/components/", info:"Componentes reutilizables en PascalCase. Import con @/components/Nombre. ⚠️ El apunte de compuestos usa src/app/components/: fijate qué convención pide tu consigna." },
+    { line:"│       └── hooks/", side:"front" },
+    { line:"│           └── useSocket.js", side:"front", path:"src/hooks/useSocket.js", info:"El hook de la conexión Socket.IO. ⚠️ EXISTEN DOS VERSIONES (A: export default con objeto / B: export nombrado con dos parámetros). Ver tema WebSockets." },
+    { line:"└── docs/                         (solo TP Integrador)", side:"plain", path:"docs/", info:"Documentación del TP Integrador." },
+    { line:"    ├── script.sql                  creación de tablas + inserts de ejemplo", side:"plain", path:"docs/script.sql", info:"CREATE TABLE + INSERTs para levantar la base de prueba." },
+    { line:"    └── DER.(drawio/png/pdf)", side:"plain", path:"docs/DER", info:"Diagrama Entidad-Relación de la base." }
+  ],
+  reglas:[
+    ["¿Es una **página**?", "`src/app/<ruta>/page.js` (carpeta con el nombre de la ruta)"],
+    ["¿Es un **layout**?", "`src/app/<ruta>/layout.js`"],
+    ["¿Es un **componente reutilizable**?", "`src/components/NombreComponente.js` (PascalCase)"],
+    ["¿Es un **hook propio**?", "`src/hooks/useAlgo.js`"],
+    ["¿Son **estilos de un componente**?", "`src/components/Nombre.module.css`; de una página → `src/app/<ruta>/page.module.css`"],
+    ["¿Es el **servidor**?", "`backend/index.js` (o `app.js`, ver ⚠️ nombre del archivo principal)"]
+  ],
+  backFront:[
+    ["Componentes básicos / compuestos","—","`src/components/*.js`, `src/app/<ruta>/page.js`"],
+    ["Hooks (useState, useEffect), Event, Conditional Rendering","—","Todo en el front, con `\"use client\"`"],
+    ["Fetch y métodos HTTP","`backend/index.js` (o `app.js`): endpoints `GET/POST/PUT/DELETE`, `cors()`, `express.json()`","`fetch(...)` dentro de `useEffect` / handlers en la página o componente"],
+    ["Router","—","`useRouter`, `useSearchParams`, `<Link>` (de `next/navigation` y `next/link`)"],
+    ["WebSockets","`socket.io` en el servidor: `io.on(\"connection\")`, `joinRoom`, `pingAll`, `sendMessage`, `disconnect`; sesiones; CORS","`src/hooks/useSocket.js` + `socket.emit` / `socket.on` en las páginas"],
+    ["Base de datos (MySQL)","`backend/modulos/mysql.js` (o `db.js`) + endpoints que consultan","El front **nunca** habla con la base: siempre `fetch` a la API"]
+  ],
+  flujos:[
+    { t:"h3", x:"HTTP (fetch)" },
+    { parts:[ {t:"Frontend Next.js (:3000)", lado:"FRONT"}, {arrow:"→ fetch() →"}, {t:"Backend Express (:3001 o :4000)", lado:"BACK"}, {arrow:"→ SQL →"}, {t:"Base de datos (MySQL)", lado:"BACK"} ] },
+    { t:"p", x:"HTTP abre y cierra la conexión por cada dato enviado/recibido: solo el cliente pide, el servidor nunca inicia comunicación ni notifica cambios por sí mismo." },
+    { t:"h3", x:"WebSocket (Socket.IO)" },
+    { parts:[ {t:"Cliente (front)", lado:"FRONT"}, {arrow:"⇄ handshake ⇄"}, {t:"Servidor (back)", lado:"BACK"} ] },
+    { t:"p", x:"Un solo canal abierto permanente: bidireccional (ambos lados mandan cuando quieren), tiempo real y broadcast (io.emit a todos / io.to(sala).emit a la room)." }
+  ],
+  notaPuertos:"⚠️ Puertos: fetch/Express de los apuntes usa back 3001 y front 3000. Sockets/TP2/Integrador usa back 4000 y front 3000 + 3001 (dos instancias). Si usás el back de fetch en 3001 Y además la segunda instancia del front en 3001, pelean por el puerto: mové alguno (los puertos son inputs en los generadores).",
+  estilosTP1:[
+    ["`NotaInput.module.css`","`src/components/NotaInput.module.css`"],
+    ["`NotaItem.module.css`","`src/components/NotaItem.module.css`"],
+    ["`ListaNotas.module.css`","`src/components/ListaNotas.module.css`"],
+    ["`Home.module.css`","`src/app/page.module.css`"],
+    ["`Notas.module.css`","`src/app/notas/page.module.css`"]
+  ]
+};
+
+
+// =====================================================================
+// ======================  AGREGAR NUEVOS TEMAS
+
+// =====================================================================
+// ======================  AGREGAR NUEVOS TEMAS ACÁ  ===================
+// ---------- Constante TEORIA: un objeto por tema (fuente: apuntes) ----
+// =====================================================================
+const TEORIA = [
+{
+  id:"basicos",
+  nombre:"Creación de componentes básicos en NextJS",
+  intro:"Un componente es una pieza de interfaz reutilizable que devuelve JSX (una mezcla de HTML y JavaScript). En Next.js con App Router, cada carpeta dentro de src/app/ es una ruta y debe tener un archivo page.js que exporte default un componente. Los componentes reutilizables se guardan en src/components/.",
+  claves:[
+    "Todo componente devuelve **UNA sola etiqueta raíz** (si tenés varias, las envolvés en un <div> o fragment <>...</>).",
+    "Los nombres de componentes van en **PascalCase**: Button, Title, Card, RankingPage.",
+    "Se exporta con `export default` para poder importarlo después.",
+    "**\"use client\"** va como PRIMERA línea del archivo siempre que el componente use hooks (useState...) o eventos (onClick...). Si no usa, puede ir sin ella.",
+    "Las props se reciben como parámetro: `props` (objeto) o desestructuradas `{ onClick, children }`.",
+    "`children` es la prop especial que recibe lo que va ENTRE la etiqueta de apertura y cierre.",
+    "En los eventos se pasa la función SIN paréntesis: `onClick={handleClick}` (con paréntesis se ejecutaría al renderizar).",
+    "Para usar un componente primero se importa: `import Button from \"@/components/Button\";`"
+  ],
+  donde:[
+    ["🔵 FRONT","src/app/<ruta>/","page.js","La página de esa ruta. src/app/page.js es la ruta \"/\"."],
+    ["🔵 FRONT","src/app/","layout.js","Layout raíz: envuelve todas las páginas, recibe children."],
+    ["🔵 FRONT","src/components/","Button.js, Title.js...","Componentes reutilizables (PascalCase)."],
+    ["🔵 FRONT","src/components/","Nombre.module.css","Estilos del componente (CSS Modules)."]
+  ],
+  codigos:[
+    { titulo:"Componente básico sin props", archivo:"src/components/Title.js", lado:"FRONT", codigo:
+      L(['export default function Title(){',
+         '  return <h1>Título desde un componente</h1>;',
+         '}']) },
+    { titulo:"Componente con evento (lleva \"use client\")", archivo:"src/components/Button.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         '',
+         'export default function Button({ onClick, children }){',
+         '  return (',
+         '    <button className="boton-neon" onClick={onClick}>',
+         '      {children}',
+         '    </button>',
+         '  );',
+         '}']) },
+    { titulo:"Página que usa los componentes", archivo:"src/app/page.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         '',
+         'import Title from "@/components/Title";',
+         'import Button from "@/components/Button";',
+         '',
+         'export default function HomePage(){',
+         '  const manejarClick = () => {',
+         '    console.log("¡Botón presionado!");',
+         '  };',
+         '',
+         '  return (',
+         '    <div>',
+         '      <Title />',
+         '      <Button onClick={manejarClick}>Haz clic acá</Button>',
+         '    </div>',
+         '  );',
+         '}']) },
+    { titulo:"Layout raíz", archivo:"src/app/layout.js", lado:"FRONT", codigo:
+      L(['export default function RootLayout({ children }){',
+         '  return (',
+         '    <html lang="es">',
+         '      <body>{children}</body>',
+         '    </html>',
+         '  );',
+         '}']) }
+  ],
+  errores:[
+    "Olvidar `export default`: el import después falla con \"does not provide an app default export\".",
+    "Devolver dos etiquetas hermanas sin contenedor (hay que envolver en un solo <div> o <>).",
+    "Poner el componente en minúscula (`button.js` / `function button()`): React lo confunde con una etiqueta HTML.",
+    "Usar hooks o `onClick` sin la primera línea `\"use client\"`.",
+    "Escribir `onClick={manejarClick()}` (con paréntesis): se ejecuta solo al renderizar.",
+    "⚠️ Ubicación de componentes: la mayoría de los apuntes y el TP1 usan `src/components/` (import `@/components/Button`); el apunte de compuestos usa `src/app/components/` (import `../components/Form`). Default: `src/components/`."
+  ]
+},
+{
+  id:"compuestos",
+  nombre:"Creación de componentes compuestos en React",
+  intro:"Un componente compuesto combina varios componentes básicos dentro de uno nuevo (por ejemplo Form usa Title + inputs + Button). Las props viajan de padre a hijo: la página le pasa title y buttonText al Form, y el Form reenvía onButtonClick al Button. Así la lógica vive arriba y lo visual abajo.",
+  claves:[
+    "El compuesto **importa y renderiza** otros componentes; no duplica su código.",
+    "Las props se **reenvían**: `<Button onClick={onButtonClick}>{buttonText}</Button>`.",
+    "Flujo de una prop: Página → Form (prop) → Button (prop) → <button onClick>.",
+    "Cada componente sigue con UNA sola etiqueta raíz y PascalCase.",
+    "\"use client\" en el compuesto si recibe/maneja eventos.",
+    "⚠️ El apunte de compuestos ubica los componentes en `src/app/components/` e importa con `../components/Form`; el resto de los apuntes usa `src/components/` con `@/components/...`. Elegí una convención y sostenela (default: `src/components/`)."
+  ],
+  donde:[
+    ["🔵 FRONT","src/components/","Form.js","El componente compuesto que combina los base."],
+    ["🔵 FRONT","src/components/","Title.js, Button.js","Los componentes base que el compuesto importa."],
+    ["🔵 FRONT","src/app/<ruta>/","page.js","La página que renderiza el compuesto y baja las props."]
+  ],
+  codigos:[
+    { titulo:"Componente base Title (recibe text)", archivo:"src/components/Title.js", lado:"FRONT", codigo:
+      L(['export default function Title({ text }){',
+         '  return <h1>{text}</h1>;',
+         '}']) },
+    { titulo:"Componente base Button (recibe onClick y children)", archivo:"src/components/Button.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         '',
+         'export default function Button({ onClick, children }){',
+         '  return <button onClick={onClick}>{children}</button>;',
+         '}']) },
+    { titulo:"Componente compuesto Form (combina Title + inputs + Button)", archivo:"src/components/Form.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         '',
+         'import Title from "./Title";',
+         'import Button from "./Button";',
+         '',
+         'export default function Form({ title, buttonText, onButtonClick }){',
+         '  return (',
+         '    <div>',
+         '      <Title text={title} />',
+         '      <input type="text" placeholder="Usuario" />',
+         '      <input type="password" placeholder="Contraseña" />',
+         '      <Button onClick={onButtonClick}>{buttonText}</Button>',
+         '    </div>',
+         '  );',
+         '}']) },
+    { titulo:"Página que usa el compuesto (baja las props)", archivo:"src/app/login/page.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         '',
+         'import Form from "@/components/Form";',
+         '',
+         'export default function LoginPage(){',
+         '  const handleLoginClick = () => {',
+         '    console.log("Login enviado");',
+         '  };',
+         '',
+         '  // flujo de la prop: página -> Form -> Button -> <button onClick>',
+         '  return (',
+         '    <Form title="Iniciar sesión" buttonText="Entrar" onButtonClick={handleLoginClick} />',
+         '  );',
+         '}']) }
+  ],
+  errores:[
+    "Perder una prop en el camino: si Form no la recibe o no la reenvía, el Button no hace nada.",
+    "⚠️ Prop sobrante: en el apunte se pasa `titleLevel={1}` al Form, pero Form no la usa. No la copies (R12: no inventar).",
+    "Importar con mayúscula/minúscula distinta al nombre real del archivo (en Linux rompe).",
+    "Ponerle estado propio al compuesto cuando la lógica pertenece a la página."
+  ]
+},
+{
+  id:"hooks",
+  nombre:"React hooks, objeto Event y Conditional Rendering",
+  intro:"Los hooks son funciones que \"enganchan\" lógica de React a componentes funcionales. useState agrega estado (memoria que, al cambiar con su setter, vuelve a renderizar el componente) y useEffect sincroniza con el mundo exterior (fetch, timers, suscripciones). El objeto Event llega solo como primer argumento del handler. Conditional Rendering es decidir qué se muestra según el estado.",
+  claves:[
+    "`const [cuenta, setCuenta] = useState(0)`: array desestructurado, el setter SIEMPRE empieza con Set.",
+    "Nunca mutar el estado directo (`cuenta++`); siempre con el setter: `setCuenta(cuenta + 1)`.",
+    "**Reglas de los hooks:** solo en componentes (no en funciones comunes), siempre en el MISMO ORDEN, nunca dentro de if/bucles.",
+    "useEffect sin array de dependencias corre en CADA render; con `[]` corre solo al MONTAR; con `[x]` cuando cambia x.",
+    "useEffect puede devolver una función de **cleanup** (ej: clearInterval) que corre al desmontar.",
+    "Objeto Event: `event.target.value` lee el input; `event.preventDefault()` corta el envío por defecto del form.",
+    "Conditional Rendering: `&&` (una opción), ternario `? :` (dos opciones), o función if/else (muchos estados: cargando/error/exito).",
+    "En listas, cada elemento necesita `key` única: `items.map(item => <li key={item.id}>...</li>)`. En TP1 está prohibido map (usar forEach + push)."
+  ],
+  donde:[
+    ["🔵 FRONT","src/app/<ruta>/","page.js","Las páginas con hooks llevan \"use client\" arriba."],
+    ["🔵 FRONT","src/hooks/","useAlgo.js","Hooks propios (custom hooks), arrancan con \"use\"."]
+  ],
+  codigos:[
+    { titulo:"useState — contador mínimo", archivo:"src/app/contador/page.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         'import { useState } from "react";',
+         '',
+         'export default function ContadorPage(){',
+         '  const [cuenta, setCuenta] = useState(0);',
+         '',
+         '  return (',
+         '    <div>',
+         '      <p>Valor: {cuenta}</p>',
+         '      <button onClick={() => setCuenta(cuenta + 1)}>Sumar</button>',
+         '    </div>',
+         '  );',
+         '}']) },
+    { titulo:"useEffect — los comportamientos", archivo:"(ejemplos sueltos)", lado:"FRONT", codigo:
+      L(['// sin array: corre en CADA render (cuidado, puede loopear)',
+         'useEffect(() => { console.log("render"); });',
+         '',
+         '// con []: corre solo al MONTAR',
+         'useEffect(() => { console.log("monté"); }, []);',
+         '',
+         '// con [cuenta]: cuando cambia cuenta',
+         'useEffect(() => { document.title = "Cuenta: " + cuenta; }, [cuenta]);',
+         '',
+         '// con cleanup: al desmontar limpia el intervalo',
+         'useEffect(() => {',
+         '  const id = setInterval(() => console.log("tic"), 1000);',
+         '  return () => clearInterval(id);',
+         '}, []);']) },
+    { titulo:"Input controlado con objeto Event", archivo:"src/app/page.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         'import { useState } from "react";',
+         '',
+         'export default function Page(){',
+         '  const [texto, setTexto] = useState("");',
+         '',
+         '  const manejarCambio = (event) => {',
+         '    setTexto(event.target.value); // valor actual del input',
+         '  };',
+         '',
+         '  return (',
+         '    <div>',
+         '      <input type="text" value={texto} onChange={manejarCambio} placeholder="Escribí..." />',
+         '      <p>Escribiste: {texto}</p>',
+         '    </div>',
+         '  );',
+         '}']) },
+    { titulo:"Formulario controlado (estado objeto) con preventDefault", archivo:"src/components/Form.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         'import { useState } from "react";',
+         '',
+         'export default function Form(){',
+         '  const [datos, setDatos] = useState({ nombre: "", edad: "", especialidad: "" });',
+         '',
+         '  const manejarCambio = (event) => {',
+         '    const { name, value } = event.target;',
+         '    setDatos({ ...datos, [name]: value }); // copio y cambio solo ese campo',
+         '  };',
+         '',
+         '  const manejarSubmit = (event) => {',
+         '    event.preventDefault(); // corta el envío por defecto del <form>',
+         '    console.log(datos);',
+         '  };',
+         '',
+         '  return (',
+         '    <form onSubmit={manejarSubmit}>',
+         '      <input name="nombre" value={datos.nombre} onChange={manejarCambio} placeholder="Nombre" />',
+         '      <input name="edad" value={datos.edad} onChange={manejarCambio} placeholder="Edad" />',
+         '      <button type="submit">Enviar</button>',
+         '    </form>',
+         '  );',
+         '}']) },
+    { titulo:"Conditional Rendering — los 3 métodos", archivo:"(ejemplos sueltos)", lado:"FRONT", codigo:
+      L(['// 1) && : muestro algo SOLO si se cumple (si no, nada)',
+         '{ isLogged && <p>Bienvenido</p> }',
+         '',
+         '// 2) ternario : dos opciones',
+         '{ isLoading ? <p>Cargando...</p> : <p>Datos listos</p> }',
+         '',
+         '// 3) función if/else : muchos estados posibles',
+         'function renderizarEstado(estado){',
+         '  if (estado === "cargando") return <p>Cargando...</p>;',
+         '  if (estado === "error") return <p>Ocurrió un error</p>;',
+         '  if (estado === "exito") return <p>¡Todo OK!</p>;',
+         '  return null;',
+         '}']) },
+    { titulo:"Botones dinámicos (texto/color/disabled según estado)", archivo:"src/components/ButtonDinamico.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         'import { useState } from "react";',
+         '',
+         'export default function ButtonDinamico(){',
+         '  const [activo, setActivo] = useState(false);',
+         '',
+         '  return (',
+         '    <button',
+         '      onClick={() => setActivo(!activo)}',
+         '      disabled={!activo}',
+         '      style={{ background: activo ? "green" : "gray", color: "white" }}',
+         '    >',
+         '      {activo ? "ACTIVO" : "INACTIVO"}',
+         '    </button>',
+         '  );',
+         '}']) },
+    { titulo:"Lista con botón Eliminar por elemento (closure con arrow)", archivo:"src/app/estudiantes/page.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         'import { useState } from "react";',
+         '',
+         'export default function EstudiantesPage(){',
+         '  const [estudiantes, setEstudiantes] = useState([',
+         '    { id: 1, nombre: "Ana" },',
+         '    { id: 2, nombre: "Beto" }',
+         '  ]);',
+         '',
+         '  const eliminar = (id) => {',
+         '    setEstudiantes(estudiantes.filter(e => e.id !== id));',
+         '  };',
+         '',
+         '  return (',
+         '    <ul>',
+         '      {estudiantes.map(est => (',
+         '        <li key={est.id}>',
+         '          {est.nombre}',
+         '          <button onClick={() => eliminar(est.id)}>Eliminar</button>',
+         '        </li>',
+         '      ))}',
+         '    </ul>',
+         '  );',
+         '}']) }
+  ],
+  errores:[
+    "Llamar el setter con el valor viejo calculado afuera (stale): usar `setCuenta(c => c + 1)` cuando hay clicks rápidos.",
+    "Mutar estado: `notas.push(nota)` NO re-renderiza; hay que crear un array nuevo.",
+    "useEffect sin array de dependencias para un fetch → bucle infinito de peticiones.",
+    "No limpiar setInterval en el cleanup → el timer sigue corriendo tras desmontar el componente.",
+    "Hooks dentro de un if o de un forEach: rompen el orden (regla de los hooks).",
+    "Olvidar `key` en el map → warning de React y re-renders raros.",
+    "`onClick={() => eliminar(est.id)}`: con arrow se pasa el id; si escribís `onClick={eliminar(est.id)}` se ejecuta al renderizar.",
+    "Todo archivo con hooks necesita `\"use client\"` arriba (⚠️ el ejemplo SocketPage del apunte lo omite; el generador siempre lo pone)."
+  ]
+},
+{
+  id:"fetch",
+  nombre:"Fetch en NextJS y Métodos de Array",
+  intro:"Fetch es la API de JavaScript para pedir datos por HTTP al backend (Express en otro puerto). Se usa adentro de useEffect (al montar) o de un handler (POST/PUT/DELETE al mandar un formulario). Los métodos de array (map, filter, find, forEach, some, every) transforman y buscan en las listas que llegan de la API.",
+  claves:[
+    "**useEffect NO puede ser async directo**: se define una función async adentro y se la llama. Alternativa: `.then()`.",
+    "`await response.json()` convierte la respuesta a objeto JS (separado del fetch).",
+    "Para enviar datos: `method`, `headers: { \"Content-Type\": \"application/json\" }` y `body: JSON.stringify(objeto)`.",
+    "REST: GET leer · POST crear · PUT actualizar · DELETE borrar.",
+    "El back necesita `cors()` (permite el origen) y `express.json()` (para leer el body).",
+    "map devuelve NUEVO array transformado (ideal para JSX); filter devuelve los que cumplen; find devuelve EL PRIMERO que cumple (o undefined); forEach solo recorre (no devuelve nada); some/every preguntan true/false.",
+    "⚠️ Revisá siempre la consigna: algunos TPs prohíben estos métodos. **TP1: prohibido map/filter/find → usar for / forEach + push.**"
+  ],
+  donde:[
+    ["🟣 BACK","backend/","index.js (o app.js)","Servidor Express con los endpoints del recurso."],
+    ["🔵 FRONT","src/app/<ruta>/","page.js","fetch en useEffect/handlers; renderiza la lista."],
+    ["🔵 FRONT","src/hooks/","useFetch.js","Custom hook opcional que devuelve { data, loading }."]
+  ],
+  codigos:[
+    { titulo:"Backend Express con CRUD de ejemplo", archivo:"backend/app.js", lado:"BACK", codigo:
+      L(['const express = require("express");',
+         'const cors = require("cors");',
+         'const app = express();',
+         'const PORT = 3001;',
+         '',
+         'app.use(cors());       // permite que el front (3000) llame',
+         'app.use(express.json()); // para leer el body JSON',
+         '',
+         'let estudiantes = [',
+         '  { id: 1, nombre: "Ana", edad: 17, especialidad: "Informática" }',
+         '];',
+         '',
+         '// GET: traer todos',
+         'app.get("/api/estudiantes", (req, res) => {',
+         '  res.json(estudiantes);',
+         '});',
+         '',
+         '// POST: crear',
+         'app.post("/api/estudiantes", (req, res) => {',
+         '  const nuevo = { id: Date.now(), ...req.body };',
+         '  estudiantes.push(nuevo);',
+         '  res.json(nuevo);',
+         '});',
+         '',
+         '// PUT: actualizar',
+         'app.put("/api/estudiantes/:id", (req, res) => {',
+         '  const { id } = req.params;',
+         '  estudiantes = estudiantes.map(e => (String(e.id) === id ? { ...e, ...req.body } : e));',
+         '  res.json(estudiantes.find(e => String(e.id) === id));',
+         '});',
+         '',
+         '// DELETE: borrar',
+         'app.delete("/api/estudiantes/:id", (req, res) => {',
+         '  const { id } = req.params;',
+         '  estudiantes = estudiantes.filter(e => String(e.id) !== id);',
+         '  res.json({ ok: true });',
+         '});',
+         '',
+         'app.listen(PORT, () => {',
+         '  console.log(`Servidor corriendo en http://localhost:${PORT}/`);',
+         '});']) },
+    { titulo:"GET en useEffect con .then()", archivo:"src/app/estudiantes/page.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         'import { useState, useEffect } from "react";',
+         '',
+         'export default function EstudiantesPage(){',
+         '  const [estudiantes, setEstudiantes] = useState([]);',
+         '  const [loading, setLoading] = useState(true);',
+         '',
+         '  useEffect(() => {',
+         '    fetch("http://localhost:3001/api/estudiantes")',
+         '      .then(response => response.json())',
+         '      .then(data => {',
+         '        setEstudiantes(data);',
+         '        setLoading(false);',
+         '      });',
+         '  }, []);',
+         '',
+         '  return (',
+         '    <div>',
+         '      {loading ? <p>Cargando...</p> : (',
+         '        <ul>',
+         '          {estudiantes.map(est => <li key={est.id}>{est.nombre}</li>)}',
+         '        </ul>',
+         '      )}',
+         '    </div>',
+         '  );',
+         '}']) },
+    { titulo:"GET en useEffect con async (función interna, NO async directo)", archivo:"src/app/estudiantes/page.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         'import { useState, useEffect } from "react";',
+         '',
+         'export default function EstudiantesPage(){',
+         '  const [estudiantes, setEstudiantes] = useState([]);',
+         '',
+         '  useEffect(() => {',
+         '    const obtenerDatos = async () => {',
+         '      try {',
+         '        const response = await fetch("http://localhost:3001/api/estudiantes");',
+         '        const data = await response.json();',
+         '        setEstudiantes(data);',
+         '      } catch (error) {',
+         '        console.error("Error al obtener los datos:", error);',
+         '      }',
+         '    };',
+         '    obtenerDatos();',
+         '  }, []);',
+         '',
+         '  return (',
+         '    <ul>',
+         '      {estudiantes.map(est => <li key={est.id}>{est.nombre}</li>)}',
+         '    </ul>',
+         '  );',
+         '}']) },
+    { titulo:"POST para agregar (y actualizar el estado con spread)", archivo:"(handler en la página)", lado:"FRONT", codigo:
+      L(['const agregar = async () => {',
+         '  const response = await fetch("http://localhost:3001/api/estudiantes", {',
+         '    method: "POST",',
+         '    headers: { "Content-Type": "application/json" },',
+         '    body: JSON.stringify({ nombre, edad, especialidad })',
+         '  });',
+         '  const data = await response.json();',
+         '  setEstudiantes([...estudiantes, data]); // array nuevo, no mutar',
+         '};']) },
+    { titulo:"Métodos de array — referencia rápida", archivo:"(teoría)", lado:"FRONT", codigo:
+      L(['const notas = [4, 8, 6, 10, 2];',
+         '',
+         'notas.map(n => n * 2);        // [8,16,12,20,4]  transforma → NUEVO array',
+         'notas.filter(n => n >= 6);    // [8,6,10]        selecciona los que cumplen',
+         'notas.find(n => n > 7);       // 8               el PRIMERO que cumple (o undefined)',
+         'notas.forEach(n => console.log(n)); // undefined solo recorre',
+         'notas.some(n => n < 4);       // true            ¿alguno cumple?',
+         'notas.every(n => n >= 1);     // true            ¿todos cumplen?',
+         '',
+         '// TP1 (sin map/filter/find): recorrer y armar con for / forEach + push',
+         'const aprobadas = [];',
+         'for (let i = 0; i < notas.length; i++) {',
+         '  if (notas[i] >= 6) aprobadas.push(notas[i]);',
+         '}']) }
+  ],
+  errores:[
+    "`useEffect(async () => {...})`: ERROR, useEffect no puede ser async directo. Función async adentro + llamada.",
+    "Olvidar `express.json()` en el back: `req.body` llega undefined en POST/PUT.",
+    "OLVIDAR `cors()` en el backend: el navegador bloquea la respuesta (típico \"blocked by CORS policy\").",
+    "Mutar el estado con push y esperar re-render: hay que setear un array nuevo.",
+    "Puertos: el apunte de fetch usa back en 3001 y front en 3000; sockets usa back en 4000. ⚠️ Si además levantás la 2ª instancia del front en 3001, ¡pelea con el back de fetch!",
+    "⚠️ Nombre del archivo principal: `app.js` (apunte de fetch) vs `index.js` (backend del TP2/Integrador). Es lo mismo, elegí uno y sostenelo."
+  ]
+},
+{
+  id:"router",
+  nombre:"Router en NextJS",
+  intro:"El Router de Next.js permite navegar entre páginas de forma programática (desde código JS) además de los enlaces <Link>. Con App Router (Next 13+) se usa next/navigation: useRouter para navegar (push/replace/back/forward/refresh) y useSearchParams para leer los parámetros de la URL (?sala=pio&usuario=ana).",
+  claves:[
+    "**Link** para navegación directa (enlace normal); **useRouter** para navegación programática (después de validar, condicional, multi-paso).",
+    "⚠️ Importar SIEMPRE de `next/navigation`, NUNCA de `next/router` (eso es Pages Router).",
+    "`useRouter` y `useSearchParams` necesitan `\"use client\"`.",
+    "useRouter: `push` navega (guarda historial) · `replace` navega sin guardar · `back` vuelve · `forward` avanza · `refresh` recarga.",
+    "useSearchParams: `.get(\"clave\")` valor · `.has(\"clave\")` existe · `.toString()` todo el query · `.forEach((v,k)=>...)` recorrerlo.",
+    "useSearchParams necesita Suspense alrededor del componente que lo usa en build (el generador lo recuerda).",
+    "Navegar con parámetros: `router.push(\"/chat?sala=\" + sala)` o con template string."
+  ],
+  donde:[
+    ["🔵 FRONT","src/app/<ruta>/","page.js","Páginas que navegan con useRouter o leen con useSearchParams."],
+    ["🔵 FRONT","src/components/","Menu.js","Componente con <Link href=\"/ruta\"> para la navegación directa."]
+  ],
+  codigos:[
+    { titulo:"useRouter — navegación programática", archivo:"src/app/page.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         'import { useRouter } from "next/navigation";',
+         '',
+         'export default function MiComponente(){',
+         '  const router = useRouter();',
+         '',
+         '  const irAOtraPagina = () => {',
+         '    router.push("/otra-pagina");',
+         '  };',
+         '',
+         '  return <button onClick={irAOtraPagina}>Ir a otra página</button>;',
+         '}']) },
+    { titulo:"Navegar solo si la validación pasa", archivo:"src/app/login/page.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         'import { useRouter } from "next/navigation";',
+         '',
+         'export default function FormularioLogin(){',
+         '  const router = useRouter();',
+         '',
+         '  const manejarLogin = async () => {',
+         '    const esValido = validarFormulario();',
+         '    if (esValido) {',
+         '      const exito = await enviarLogin();',
+         '      if (exito) {',
+         '        router.push("/dashboard"); // recién acá navego',
+         '      }',
+         '    }',
+         '  };',
+         '',
+         '  return <button onClick={manejarLogin}>Iniciar Sesión</button>;',
+         '}']) },
+    { titulo:"useSearchParams — leer ?sala=...&usuario=...", archivo:"src/app/chat/page.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         'import { useSearchParams } from "next/navigation";',
+         '',
+         'export default function ChatPage(){',
+         '  const searchParams = useSearchParams();',
+         '  const sala = searchParams.get("sala");     // "/chat?sala=pio" → "pio"',
+         '  const usuario = searchParams.get("usuario");',
+         '',
+         '  return (',
+         '    <div>',
+         '      <h1>Sala: {sala ?? "(sin sala)"}</h1>',
+         '      <p>Usuario: {usuario}</p>',
+         '    </div>',
+         '  );',
+         '}']) },
+    { titulo:"<Link> — navegación directa (menú)", archivo:"src/components/Menu.js", lado:"FRONT", codigo:
+      L(['import Link from "next/link";',
+         '',
+         'export default function Menu(){',
+         '  return (',
+         '    <nav>',
+         '      <Link href="/">Inicio</Link>',
+         '      <Link href="/socket">Socket</Link>',
+         '      <Link href="/chat">Chat</Link>',
+         '    </nav>',
+         '  );',
+         '}']) }
+  ],
+  errores:[
+    "Importar `useRouter` de `next/router`: es de Pages Router y con App Router no anda.",
+    "Olvidar `\"use client\"`: useSearchParams/usRouter tiran error en Server Component.",
+    "Confundir push (guarda historial) con replace (no guarda): replace sirve p.ej. luego de un login para que \"volver\" no te lleve al login.",
+    "Armar la URL mal (falta el ?, separadores, espacios sin codificar).",
+    "useSearchParams sin <Suspense> puede romper el build (warning de Next)."
+  ]
+},
+{
+  id:"sockets",
+  nombre:"WebSockets y uso del hook useSocket en React",
+  intro:"WebSocket abre UN solo canal permanente entre cliente y servidor (HTTP abre y cierra por cada dato). Habilita bidireccionalidad (ambos lados mandan mensajes cuando quieren), tiempo real y broadcast (un evento llega a todos, o solo a los de una room). Socket.IO lo implementa: el back con socket.io, el front con socket.io-client y nuestro hook useSocket.",
+  claves:[
+    "Eventos del back dado: `connection` (automático al conectar) · `joinRoom` (entra a una sala y emite `chat-messages`) · `pingAll` (mensaje a TODOS) · `sendMessage` (mensaje a la sala, emite `newMessage`) · `disconnect` (automático al salir).",
+    "Front: `socket.emit(\"evento\", datos)` manda · `socket.on(\"evento\", fn)` escucha.",
+    "El back valida orígenes CORS (3000 y 3001) y sesiones (`express-session` + `io.use(...)`).",
+    "serverUrl del hook: `ws://localhost:4000` (⚠️ IP del back: cambiarla en red).",
+    "Siempre escuchar con `socket.on` adentro de un `useEffect` dependiente de `socket`, y quitar listeners en el cleanup (`socket.off(...)`) o disconnect.",
+    "**⚠️ El hook useSocket existe en DOS versiones** (ver tabla abajo): el import y la llamada cambian; si usás la equivocada, no anda."
+  ],
+  donde:[
+    ["🟣 BACK","backend/","index.js","Servidor Express+Socket.IO en puerto 4000, eventos de socket."],
+    ["🔵 FRONT","src/hooks/","useSocket.js","El hook que crea la conexión (versión A o B, ¡fijate cuál!)."],
+    ["🔵 FRONT","src/app/socket/","page.js","Página de prueba: isConnected, pingAll, mensajes."],
+    ["🔵 FRONT","src/app/chat/","page.js","Chat: joinRoom + sendMessage + newMessage."],
+    ["🔵 FRONT","frontend/","package.json","Dependencias: socket.io-client (front) / socket.io (back)."]
+  ],
+  extra:[
+    { t:"h3", x:"⚠️ Las dos versiones del hook useSocket" },
+    { t:"table", head:["","Versión A — apunte v2.0","Versión B — archivo useSocket.js"],
+      rows:[
+        ["Export","`export default function useSocket(...)`","`export { useSocket }` (nombrado)"],
+        ["Import","`import useSocket from \"@/hooks/useSocket\";`","`import { useSocket } from \"@/hooks/useSocket\";`"],
+        ["Parámetros","un objeto: `useSocket({ serverUrl, options })`","dos parámetros: `useSocket(options, serverUrl)`"],
+        ["Conexión","`useRef` (se crea una sola vez)","`useState` + `useEffect`, y `disconnect()` en el cleanup"],
+        ["Retorna","`{ socket, isConnected }`","`{ socket, isConnected }`"]
+      ]},
+    { t:"warn", items:[
+      "**Bug de la Versión A:** como recibe un objeto desestructurado sin valor por defecto, llamar `useSocket()` sin argumentos tira TypeError. Hay que llamarla `useSocket({})` o definir `useSocket({ serverUrl = \"ws://localhost:4000\", options = {} } = {})` (con el `= {}` final).",
+      "**Versión B:** `socket` arranca en `null`; hay que hacer `if (!socket) return;` dentro del useEffect antes de usar socket.on."
+    ]},
+    { t:"h3", x:"Código de la Versión A (apunte v2.0)" },
+    { t:"code", x:"useSocket.js — 🔵 FRONT", codigo:
+      L(['import { useState, useEffect, useRef } from "react";',
+         'import { io } from "socket.io-client";',
+         '',
+         'export default function useSocket({ serverUrl = "ws://localhost:4000", options = {} } = {}) {',
+         '  const [isConnected, setIsConnected] = useState(false);',
+         '  const socketRef = useRef(null);',
+         '',
+         '  if (!socketRef.current) {',
+         '    // Solo se crea una vez',
+         '    socketRef.current = io(serverUrl, options);',
+         '  }',
+         '',
+         '  useEffect(() => {',
+         '    const socket = socketRef.current;',
+         '',
+         '    const onConnect = () => {',
+         '      setIsConnected(true);',
+         '      console.log("WebSocket conectado:", socket.id);',
+         '    };',
+         '',
+         '    const onDisconnect = () => {',
+         '      setIsConnected(false);',
+         '      console.log("X WebSocket desconectado");',
+         '    };',
+         '',
+         '    socket.on("connect", onConnect);',
+         '    socket.on("disconnect", onDisconnect);',
+         '',
+         '    return () => {',
+         '      socket.off("connect", onConnect);',
+         '      socket.off("disconnect", onDisconnect);',
+         '    };',
+         '  }, []);',
+         '',
+         '  return { socket: socketRef.current, isConnected };',
+         '}']) },
+    { t:"h3", x:"Código de la Versión B (tal cual el archivo useSocket.js del repo)" },
+    { t:"code", x:"useSocket.js — 🔵 FRONT", codigo:
+      L(["import { useState, useEffect } from 'react';",
+         "import io from 'socket.io-client';",
+         '',
+         'const useSocket = (options = { withCredentials: false }, serverUrl = "ws://localhost:4000/") => { //ACÁ PONER LA IP DEL BACK',
+         '  const [socket, setSocket] = useState(null);',
+         '  const [isConnected, setIsConnected] = useState(false);',
+         '',
+         '  useEffect(() => {',
+         '    // Crear una conexión con el backend usando Socket.IO',
+         '    const socketIo = io(serverUrl, options);',
+         '',
+         '    // Actualizar el estado de la conexión',
+         "    socketIo.on('connect', () => {",
+         '      setIsConnected(true);',
+         "      console.log('WebSocket connectado.');",
+         '    });',
+         '',
+         "    socketIo.on('disconnect', () => {",
+         '      setIsConnected(false);',
+         "      console.log('WebSocket desconectado');",
+         '    });',
+         '',
+         '    // Guardar la instancia del socket en el estado',
+         '    setSocket(socketIo);',
+         '',
+         '    // Limpiar la conexión cuando el componente se desmonte',
+         '    return () => {',
+         '      socketIo.disconnect();',
+         '    };',
+         '  }, [serverUrl, JSON.stringify(options)]);',
+         '',
+         '  return { socket, isConnected };',
+         '};',
+         '',
+         'export { useSocket };']) },
+    { t:"h3", x:"Configuración del backend (Express + sesiones + Socket.IO, puerto 4000)" },
+    { t:"code", x:"backend/index.js — 🟣 BACK", codigo:
+      L(['const express = require("express");',
+         'const app = express();',
+         'const port = process.env.PORT || 4000; // Puerto por el que estoy ejecutando la página Web',
+         'const cors = require("cors");',
+         'const session = require("express-session"); // Para el manejo de las variables de sesión',
+         '',
+         'app.use(cors());',
+         '',
+         'const server = app.listen(port, () => {',
+         '  console.log(`Servidor NodeJS corriendo en http://localhost:${port}/`);',
+         '});',
+         '',
+         'const io = require("socket.io")(server, {',
+         '  cors: {',
+         '    // IMPORTANTE: REVISAR PUERTO DEL FRONTEND',
+         '    origin: ["http://localhost:3000", "http://localhost:3001"], // Permitir el origen localhost:3000',
+         '    methods: ["GET", "POST", "PUT", "DELETE"], // Métodos permitidos',
+         '    credentials: true, // Habilitar el envío de cookies',
+         '  },',
+         '});',
+         '',
+         'const sessionMiddleware = session({',
+         '  secret: "supersarasa", // Elegir tu propia key secreta',
+         '  resave: false,',
+         '  saveUninitialized: false,',
+         '});',
+         '',
+         'app.use(sessionMiddleware);',
+         '',
+         'io.use((socket, next) => {',
+         '  sessionMiddleware(socket.request, {}, next);',
+         '});']) },
+    { t:"h3", x:"Eventos del backend" },
+    { t:"code", x:"backend/index.js (sigue abajo de la config) — 🟣 BACK", codigo:
+      L(['// A PARTIR DE ACÁ LOS EVENTOS DEL SOCKET',
+         'io.on("connection", (socket) => {',
+         '  const req = socket.request;',
+         '',
+         '  socket.on("joinRoom", (data) => {',
+         '    console.log("io.on req.session.room:", req.session.room);',
+         '    if (req.session.room != undefined && req.session.room.length > 0) {',
+         '      socket.leave(req.session.room);',
+         '    }',
+         '    req.session.room = data.room;',
+         '    socket.join(req.session.room);',
+         '',
+         '    io.to(req.session.room).emit("chat-messages", {',
+         '      user: req.session.user,',
+         '      room: req.session.room,',
+         '    });',
+         '  });',
+         '',
+         '  socket.on("pingAll", (data) => {',
+         '    console.log("PING ALL: ", data);',
+         '    io.emit("pingAll", { event: "Ping to all", message: data });',
+         '  });',
+         '',
+         '  socket.on("sendMessage", (data) => {',
+         '    io.to(req.session.room).emit("newMessage", {',
+         '      room: req.session.room,',
+         '      message: data,',
+         '    });',
+         '  });',
+         '',
+         '  socket.on("disconnect", () => {',
+         '    console.log("Disconnect");',
+         '  });',
+         '});']) },
+    { t:"h3", x:"Tabla de eventos" },
+    { t:"table", head:["Evento","Dirección","Qué hace"],
+      rows:[
+        ["`connection`","cliente → servidor","Se ejecuta automáticamente cuando un cliente se conecta."],
+        ["`joinRoom`","cliente → servidor","Cambia de sala: sale de la anterior, entra a la nueva y emite `chat-messages` a la sala."],
+        ["`pingAll`","cliente → todos","Envía un mensaje a TODOS los clientes conectados (`io.emit`)."],
+        ["`sendMessage`","cliente → sala","Emite `newMessage` solo a los clientes de la misma sala (`io.to(room).emit`)."],
+        ["`disconnect`","automático","Se ejecuta cuando un cliente se desconecta."]
+      ]},
+    { t:"h3", x:"Uso en una página (Versión A, con \"use client\" agregado ⚠️)" },
+    { t:"code", x:"src/app/socket/page.js — 🔵 FRONT", codigo:
+      L(['"use client";',
+         'import useSocket from "@/hooks/useSocket";',
+         'import { useEffect } from "react";',
+         '',
+         'export default function SocketPage() {',
+         '  const { socket, isConnected } = useSocket({}); // ⚠️ Versión A: siempre con objeto (aunque vacío)',
+         '',
+         '  useEffect(() => {',
+         '    if (!socket) return;',
+         '    // Aquí entrará cuando reciba un evento',
+         '  }, [socket]);',
+         '',
+         '  return <h1>Socket funcionando</h1>;',
+         '}']) },
+    { t:"note", x:"⚠️ En el apunte original este ejemplo NO tiene \"use client\" y llama useSocket() sin argumentos (da TypeError con la Versión A). Arriba está corregido." }
+  ],
+  codigos:[],
+  errores:[
+    "Confundir las versiones: importar `useSocket` de forma nombrada cuando el archivo hace `export default` (o viceversa) → error \"useSocket is not a function\".",
+    "Llamar `useSocket()` sin `{}` en la Versión A → TypeError (bug conocido del apunte).",
+    "Olvidar `if (!socket) return;` en la Versión B: socket arranca null y `socket.on` revienta.",
+    "Puerto/serverUrl mal: el hook apunta a `ws://localhost:4000`; si el back está en otra IP (red), hay que cambiarlo.",
+    "CORS: si el front corre en un puerto no listado en `origin`, la conexión de socket falla.",
+    "No limpiar `socket.on` (Versión A) o no disconnect (Versión B): listeners duplicados, el mensaje se procesa varias veces.",
+    "Levantar el segundo front en 3001 cuando el back de fetch usa 3001 (conflicto de puertos)."
+  ]
+},
+{
+  id:"estilos",
+  nombre:"Estilos: CSS Modules y clsx",
+  intro:"CSS Modules: cada componente tiene su archivo .module.css y sus clases quedan aisladas (no chocan con otros componentes). Se importa el archivo como `styles` y se aplican con `className={styles.nombreDeClase}`. clsx es una librería para armar el className condicionalmente (muy útil con Conditional Rendering).",
+  claves:[
+    "Copiar el `.module.css` provisto a la ruta indicada (componente → `src/components/`, página → `src/app/<ruta>/page.module.css`).",
+    "En el JS: `import styles from \"./NotaItem.module.css\";` (el ./ porque están en la misma carpeta).",
+    "Aplicar: `<div className={styles.contenedor}>`.",
+    "Si el nombre de clase NO existe en el .module.css, `styles.nombre` da undefined → el className queda roto: **si el className no existe en el .module.css, el nombre está mal**.",
+    "clsx: `npm i clsx` y `import clsx from \"clsx\";` → `className={clsx(styles.boton, isActive && styles.activo)}` arma \"boton activo\" solo si isActive es true.",
+    "Se puede combinar con template strings: `className={`${styles.item} ${nota >= 6 ? styles.ok : styles.bad}`}`."
+  ],
+  donde:[
+    ["🔵 FRONT","src/components/","NotaItem.module.css (etc.)","Estilos de cada componente."],
+    ["🔵 FRONT","src/app/<ruta>/","page.module.css","Estilos de una página."],
+    ["🔵 FRONT","src/app/","globals.css","Estilos globales (todo el sitio)."]
+  ],
+  codigos:[
+    { titulo:"Uso de un CSS Module en un componente", archivo:"src/components/NotaItem.js", lado:"FRONT", codigo:
+      L(['import styles from "./NotaItem.module.css";',
+         '',
+         'export default function NotaItem({ nota }){',
+         '  return (',
+         '    <div className={styles.contenedor}>',
+         '      <span className={styles.nota}>{nota}</span>',
+         '    </div>',
+         '  );',
+         '}']) },
+    { titulo:"Esqueleto del .module.css", archivo:"src/components/NotaItem.module.css", lado:"FRONT", codigo:
+      L(['.contenedor {',
+         '  display: flex;',
+         '  justify-content: space-between;',
+         '  padding: 8px;',
+         '}',
+         '',
+         '.nota {',
+         '  font-weight: bold;',
+         '}']) },
+    { titulo:"clsx — className condicional", archivo:"src/components/Button.js", lado:"FRONT", codigo:
+      L(['import clsx from "clsx";',
+         'import styles from "./Button.module.css";',
+         '',
+         'export default function Button({ activo, children }){',
+         '  return (',
+         '    <button className={clsx(styles.boton, activo && styles.activo)}>',
+         '      {children}',
+         '    </button>',
+         '  );',
+         '}']) }
+  ],
+  errores:[
+    "Escribir `className=\"contenedor\"` (string literal): con CSS Modules NO aplica, hay que usar `{styles.contenedor}`.",
+    "Nombre de clase mal o con guiones: `.mi-clase` en CSS se escribe `styles[\"mi-clase\"]` en JS (mejor usar camelCase en el css).",
+    "Importar con ruta mal: `./Archivo.module.css` si está al lado, `../components/X.module.css` si no.",
+    "clsx no viene instalado: `npm i clsx` primero."
+  ]
+},
+{
+  id:"guia",
+  nombre:"Guía de examen (mis resúmenes)",
+  intro:"Checklist mental para la prueba: repasar los conceptos clave de cada tema, practicar los ejercicios y conocer los errores típicos. Fuente: guia-examen-dai y resumen-examen (se resume lo que aparece en los apuntes de este repo; verificá contra tu guía impresa).",
+  claves:[
+    "**Antes de escribir:** definí qué va en el back (endpoints/events) y qué en el front (páginas/componentes/hooks) y ubicá cada archivo antes de tipear.",
+    "**Práctica extra 1 — input en tiempo real:** input controlado (`value={estado}` + `onChange` con `event.target.value`); el texto se ve mientras tipeás.",
+    "**Práctica extra 2 — botones dinámicos:** texto/estilo/disabled según estado con ternario u objeto style.",
+    "**Práctica extra 3 — formulario controlado:** un solo estado objeto + manejarCambio con name/value + manejarSubmit con preventDefault.",
+    "**Práctica extra 4 — CRUD combinado:** página que hace GET al montar (useEffect), POST con formulario, DELETE con botón por fila, loading y conditional rendering.",
+    "**Práctica extra 5 — custom hook:** cualquier lógica reutilizable (p.ej. fetch) va a `src/hooks/useAlgo.js`; conviene que devuelva objeto `{ dato, loading }`.",
+    "**Práctica extra 6 — conexión backend → base de datos:** `mysql2/promise` createPool, consultas parametrizadas con `?`, endpoints que hacen `await pool.query(...)` y `res.json(filas)`.",
+    "Repasar: qué lleva `\"use client\"`, PascalCase, key en maps, diferencia push/replace, Versión A vs B de useSocket."
+  ],
+  donde:[
+    ["🔵 FRONT","src/app/<ruta>/ , src/components/ , src/hooks/","page.js, Componente.js, useAlgo.js","Todo lo del front según el mapa de carpetas."],
+    ["🟣 BACK","backend/ , backend/modulos/","index.js o app.js, mysql.js","Endpoints, eventos de socket y conexión a la base."]
+  ],
+  codigos:[
+    { titulo:"CRUD combinado (GET + POST + DELETE + loading) — esqueleto de examen", archivo:"src/app/estudiantes/page.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         'import { useState, useEffect } from "react";',
+         '',
+         'export default function EstudiantesPage(){',
+         '  const [estudiantes, setEstudiantes] = useState([]);',
+         '  const [loading, setLoading] = useState(true);',
+         '  const [nuevo, setNuevo] = useState({ nombre: "", edad: "", especialidad: "" });',
+         '',
+         '  // GET al montar',
+         '  useEffect(() => {',
+         '    const obtener = async () => {',
+         '      const res = await fetch("http://localhost:3001/api/estudiantes");',
+         '      const data = await res.json();',
+         '      setEstudiantes(data);',
+         '      setLoading(false);',
+         '    };',
+         '    obtener();',
+         '  }, []);',
+         '',
+         '  // POST con el formulario',
+         '  const manejarSubmit = async (event) => {',
+         '    event.preventDefault();',
+         '    const res = await fetch("http://localhost:3001/api/estudiantes", {',
+         '      method: "POST",',
+         '      headers: { "Content-Type": "application/json" },',
+         '      body: JSON.stringify(nuevo)',
+         '    });',
+         '    const data = await res.json();',
+         '    setEstudiantes([...estudiantes, data]);',
+         '    setNuevo({ nombre: "", edad: "", especialidad: "" });',
+         '  };',
+         '',
+         '  // DELETE por fila',
+         '  const eliminar = async (id) => {',
+         '    await fetch(`http://localhost:3001/api/estudiantes/${id}`, { method: "DELETE" });',
+         '    setEstudiantes(estudiantes.filter(e => e.id !== id));',
+         '  };',
+         '',
+         '  return (',
+         '    <div>',
+         '      {loading ? <p>Cargando...</p> : (',
+         '        <ul>',
+         '          {estudiantes.map(est => (',
+         '            <li key={est.id}>',
+         '              {est.nombre} - {est.edad}',
+         '              <button onClick={() => eliminar(est.id)}>Eliminar</button>',
+         '            </li>',
+         '          ))}',
+         '        </ul>',
+         '      )}',
+         '      <form onSubmit={manejarSubmit}>',
+         '        <input name="nombre" value={nuevo.nombre} placeholder="Nombre"',
+         '          onChange={e => setNuevo({ ...nuevo, nombre: e.target.value })} />',
+         '        <button type="submit">Agregar</button>',
+         '      </form>',
+         '    </div>',
+         '  );',
+         '}']) },
+    { titulo:"Custom hook useFetch (devuelve datos + loading)", archivo:"src/hooks/useFetch.js", lado:"FRONT", codigo:
+      L(['"use client";',
+         'import { useState, useEffect } from "react";',
+         '',
+         'export default function useFetch(url){',
+         '  const [data, setData] = useState(null);',
+         '  const [loading, setLoading] = useState(true);',
+         '',
+         '  useEffect(() => {',
+         '    const obtener = async () => {',
+         '      const res = await fetch(url);',
+         '      const json = await res.json();',
+         '      setData(json);',
+         '      setLoading(false);',
+         '    };',
+         '    obtener();',
+         '  }, [url]);',
+         '',
+         '  return { data, loading };',
+         '}']) },
+    { titulo:"Backend conectado a MySQL (mysql2/promise)", archivo:"backend/modulos/mysql.js", lado:"BACK", codigo:
+      L(['const mysql = require("mysql2/promise");',
+         '',
+         'const pool = mysql.createPool({',
+         '  host: "localhost",',
+         '  user: "root",',
+         '  password: "tuClave",',
+         '  database: "dai_pio_chat"',
+         '});',
+         '',
+         'module.exports = pool;']) },
+    { titulo:"Endpoints que consultan la base (consultas parametrizadas)", archivo:"backend/index.js (extracto)", lado:"BACK", codigo:
+      L(['const pool = require("./modulos/mysql");',
+         '',
+         '// GET: leer la tabla',
+         'app.get("/api/mensajes", async (req, res) => {',
+         '  const [filas] = await pool.query("SELECT * FROM mensajes WHERE sala = ?", [req.query.sala]);',
+         '  res.json(filas);',
+         '});',
+         '',
+         '// POST: insertar (los ? evitan inyección SQL)',
+         'app.post("/api/mensajes", async (req, res) => {',
+         '  const { sala, usuario, texto } = req.body;',
+         '  const [resultado] = await pool.query(',
+         '    "INSERT INTO mensajes (sala, usuario, texto) VALUES (?, ?, ?)",',
+         '    [sala, usuario, texto]',
+         '  );',
+         '  res.json({ id: resultado.insertId, sala, usuario, texto });',
+         '});']) }
+  ],
+  errores:[
+    "No fijarse en la consigna del TP (TP1 prohíbe map/filter/find).",
+    "Guardar el RAR con node_modules o .next* (pesa gigas y está prohibido). Nombre: 5A_TPn_APELLIDO1_APELLIDO2.rar.",
+    "Dejar el serverUrl del back o del hook en localhost cuando probás en red.",
+    "Olvidar express.json()/cors() en el back al probar el POST.",
+    "Mezclar las versiones del hook useSocket dentro de un mismo proyecto."
+  ]
+}
+];
+
+
+// =====================================================================
+// ======================  AGREGAR NUEVOS GENERADORES
+
+
+/* =====================================================================
+   ============================  MOTOR (no tocar)  =====================
+   ===================================================================== */
+var state = { sec:"teoria", tema:"mapa", openGen:null };
+var opts  = { comentarios:true, dobles:true, tp1:false };
+var valores = {};          // valores editados por generador: key = tema|gen|campo
+// -- localStorage con try/catch (R10) --
+function saveState(){
+  try{
+    localStorage.setItem("superdai", JSON.stringify({ state:state, opts:opts, valores:valores }));
+  }catch(e){ /* si falla, funciona igual */ }
+}
+function loadState(){
+  try{
+    var s = JSON.parse(localStorage.getItem("superdai") || "null");
+    if(s){
+      if(s.state && s.state.sec) state.sec = s.state.sec;
+      if(s.state && s.state.tema) state.tema = s.state.tema;
+      if(s.opts) opts = Object.assign(opts, s.opts);
+      if(s.valores) valores = s.valores;
+    }
+  }catch(e){}
+}
+
+// -- utilidades de escape/formato --
+function escHTML(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function inlineFmt(t){
+  var s=escHTML(t);
+  s=s.replace(/`([^`]+)`/g, function(_,c){return "<code>"+c+"</code>";});
+  s=s.replace(/\*\*([^*]+)\*\*/g, function(_,c){return "<strong>"+c+"</strong>";});
+  return s;
+}
+function hl(text){
+  var s=escHTML(text);
+  if(!busqText) return s;
+  try{
+    var rx=new RegExp("("+busqText.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");
+    return s.replace(rx,"<mark>$1</mark>");
+  }catch(e){ return s; }
+}
+var busqText = "";
+
+// -- copiar con fallback (R3): copia SIEMPRE el string original --
+function toast(msg){
+  var t=document.getElementById("toast");
+  t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._h); t._h=setTimeout(function(){t.classList.remove("show");},1500);
+}
+function doCopy(txt){
+  var ok=false;
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(function(){toast("✅ ¡Copiado!");},
+        function(){legacyCopy(txt);});
+      return;
+    }
+  }catch(e){}
+  legacyCopy(txt);
+  function legacyCopy(t2){
+    var ta=document.createElement("textarea");
+    ta.value=t2; ta.style.position="fixed"; ta.style.left="-9999px";
+    document.body.appendChild(ta); ta.select();
+    try{ ok=document.execCommand("copy"); }catch(e){ ok=false; }
+    document.body.removeChild(ta);
+    toast(ok ? "✅ ¡Copiado!" : "⚠️ No se pudo copiar — seleccioná el código");
+  }
+}
+
+// -- opciones globales --
+function getOpts(){
+  return { comentarios:opts.comentarios, doubles:opts.dobles, tp1:opts.tp1 };
+}
+
+// ---- render general ----
+function temaNombres(){
+  var arr=[];
+  if(state.sec==="teoria"){ arr.push({id:"mapa", nombre:"🗺️ Mapa de carpetas"}); TEORIA.forEach(function(t){arr.push({id:t.id,nombre:t.nombre});}); }
+  else { GENERADORES.forEach(function(g){arr.push({id:g.id,nombre:g.nombre});}); }
+  return arr;
+}
+function renderSidebar(){
+  var sb=document.getElementById("sidebar");
+  var mv=document.getElementById("mobileNav");
+  var names=temaNombres();
+  var filtered=names.filter(function(n){
+    if(!busqText) return true;
+    var hay=[n.nombre];
+    if(state.sec==="teoria"){
+      var t=TEORIA.find(function(x){return x.id===n.id;});
+      if(t) hay.push(searchableDeTema(t));
+    } else {
+      var g=GENERADORES.find(function(x){return x.id===n.id;});
+      if(g) hay.push((g.desc||"")+g.generadores.map(function(x){return x.titulo;}).join(" "));
+    }
+    return hay.join(" ").toLowerCase().indexOf(busqText.toLowerCase())>=0;
+  });
+  var h='<div class="side-label">'+(state.sec==="teoria"?"Temas de teoría":"Temas de generador")+"</div>";
+  filtered.forEach(function(n){
+    h+='<button class="sbtn'+(n.id===state.tema?" active":"")+'" data-id="'+n.id+'" type="button">'+hl(n.nombre)+"</button>";
+  });
+  if(!filtered.length) h+='<p class="hint">Sin resultados para “'+escHTML(busqText)+"”.</p>";
+  sb.innerHTML=h;
+  Array.prototype.forEach.call(sb.querySelectorAll(".sbtn"),function(b){
+    b.addEventListener("click",function(){ selectTema(b.getAttribute("data-id")); });
+  });
+  var mh="<option value=\"\">— Elegí un tema —</option>";
+  filtered.forEach(function(n){ mh+='<option value="'+n.id+'"'+(n.id===state.tema?" selected":"")+">"+escHTML(n.nombre)+"</option>"; });
+  mv.innerHTML=mh;
+}
+function searchableDeTema(t){
+  var parts=[t.nombre,t.intro,(t.claves||[]).join(" "),(t.errores||[]).join(" "),
+    (t.donde||[]).join(" ")];
+  (t.codigos||[]).forEach(function(c){parts.push(c.titulo||"",c.archivo||"");});
+  (t.extra||[]).forEach(function(b){ if(b.x) parts.push(b.x); });
+  return parts.join(" ");
+}
+function selectTema(id){
+  state.tema=id; state.openGen=null; saveState(); renderAll();
+  document.getElementById("content").scrollIntoView({block:"start"});
+}
+function renderAll(){
+  document.getElementById("tabTeoria").classList.toggle("active", state.sec==="teoria");
+  document.getElementById("tabGen").classList.toggle("active", state.sec==="gen");
+  var names=temaNombres();
+  if(!names.some(function(n){return n.id===state.tema;})) state.tema=names[0].id;
+  renderSidebar();
+  var c=document.getElementById("content");
+  c.innerHTML="";
+  if(state.tema==="mapa") renderMapa(c);
+  else if(state.sec==="teoria") renderTeoria(c, TEORIA.find(function(t){return t.id===state.tema;}), state.tema);
+  else renderGen(c, GENERADORES.find(function(g){return g.id===state.tema;}), state.tema);
+}
+
+// ---- TEORÍA ----
+function tableHTML(tb){
+  var h='<table class="neon-table"><thead><tr>'+tb.head.map(function(x){return "<th>"+inlineFmt(x)+"</th>";}).join("")+"</tr></thead><tbody>";
+  tb.rows.forEach(function(r){ h+="<tr>"+r.map(function(c){return "<td>"+inlineFmt(c)+"</td>";}).join("")+"</tr>"; });
+  return h+"</tbody></table>";
+}
+function flowHTML(f){
+  return '<div class="flow">'+f.parts.map(function(p,i){
+    return '<span class="fbox'+(p.lado==="BACK"?" back":"")+'">'+inlineFmt(p.t)+"</span>"+
+           (p.arrow?'<span class="farrow">'+escHTML(p.arrow)+"</span>":"");
+  }).join("")+"</div>";
+}
+function renderBloques(arr){
+  var h="";
+  arr.forEach(function(b){
+    if(b.t==="h3") h+="<h3>"+hl(b.x)+"</h3>";
+    else if(b.t==="p") h+="<p>"+inlineFmt(hl(b.x))+"</p>";
+    else if(b.t==="ul") h+="<ul>"+b.items.map(function(i){return "<li>"+inlineFmt(hl(i))+"</li>";}).join("")+"</ul>";
+    else if(b.t==="warn") h+='<ul class="warn-list">'+b.items.map(function(i){return "<li>"+inlineFmt(hl(i))+"</li>";}).join("")+"</ul>";
+    else if(b.t==="table") h+=tableHTML(b);
+    else if(b.t==="flow") h+=flowHTML(b);
+    else if(b.t==="code") h+=codeBlockStr("", b.x||"", /BACK/.test(b.x||"")?"BACK":"FRONT");
+    else if(b.t==="note") h+='<p class="hint" style="font-size:13px;margin:6px 0">'+inlineFmt(hl(b.x))+"</p>";
+  });
+  return h;
+}
+function codeBlockStr(title, archivo, lado){
+  var badge = lado==="BACK" ? '<span class="badge back">🟣 BACK</span>'
+            : lado==="FRONT" ? '<span class="badge front">🔵 FRONT</span>' : "";
+  return '<div class="codeblock'+(lado==="BACK"?" back-border":"")+'"><div class="code-head"><span class="code-title">'+escHTML(title||"Código")+"</span>"
+    +badge+(archivo?' <span class="code-file">· '+escHTML(archivo)+"</span>":"")
+    +'</div><pre class="code"></pre></div>';
+}
+function collectCodigos(t){
+  var list=[];
+  (t.codigos||[]).forEach(function(c){list.push(c);});
+  (t.extra||[]).forEach(function(b){
+    if(b.t==="code"){
+      var x=b.x||"";
+      list.push({ titulo:"Código", archivo:x.replace(/\s*—\s*(🟣 BACK|🔵 FRONT)/,""), lado:/BACK/.test(x)?"BACK":"FRONT", codigo:b.codigo });
+    }
+  });
+  return list;
+}
+function montarCodigos(root, codigos){
+  var blocks=root.querySelectorAll(".codeblock");
+  codigos.forEach(function(c,i){
+    if(!blocks[i]) return;
+    blocks[i].querySelector("pre.code").textContent=c.codigo;   // textContent: nunca innerHTML (R6)
+    var btn=document.createElement("button");
+    btn.className="btn-copy"; btn.type="button"; btn.textContent="📋 Copiar";
+    btn.addEventListener("click",function(){ doCopy(c.codigo); });
+    blocks[i].querySelector(".code-head").appendChild(btn);
+  });
+}
+function renderTeoria(container, t, temaId){
+  if(!t){ container.innerHTML='<div class="card"><h2>⚠️ Falta cargar este apunte</h2><p class="hint">No encuentro el archivo .md de este tema en el repo. No invento contenido (R12).</p></div>'; return; }
+  var h='<div class="card"><h2>'+hl(t.nombre)+"</h2>";
+  h+='<h3 style="margin-top:4px">Qué es / para qué sirve</h3><p>'+inlineFmt(hl(t.intro))+"</p>";
+  h+='<h3>Conceptos y reglas clave</h3><ul>'+t.claves.map(function(k){return "<li>"+inlineFmt(hl(k))+"</li>";}).join("")+"</ul>";
+  if(t.extra && t.extra.length){ h+=renderBloques(t.extra); }
+  h+="</div>";
+  if(t.donde && t.donde.length){
+    h+='<div class="card"><h3 style="margin-top:0">📍 Dónde va cada archivo</h3><table class="neon-table"><thead><tr><th>Lado</th><th>Carpeta exacta</th><th>Archivo</th><th>Qué contiene</th></tr></thead><tbody>';
+    t.donde.forEach(function(r){
+      var lado=/🟣|BACK/.test(r[0])?"back":"front";
+      h+="<tr><td><span class=\"badge "+lado+"\">"+escHTML(r[0])+"</span></td><td><code>"+escHTML(r[1])+"</code></td><td><code>"+escHTML(r[2])+"</code></td><td>"+inlineFmt(r[3])+"</td></tr>";
+    });
+    h+="</tbody></table></div>";
+  }
+  if(t.codigos && t.codigos.length){
+    h+='<div class="card"><h3 style="margin-top:0">Código base</h3>';
+    t.codigos.forEach(function(c){ h+=codeBlockStr(c.titulo, c.archivo, c.lado); });
+    h+="</div>";
+  }
+  if(t.errores && t.errores.length){
+    h+='<div class="card"><h3 style="margin-top:0">⚠️ Errores típicos</h3><ul class="warn-list">'
+      + t.errores.map(function(e){return "<li>"+inlineFmt(hl(e))+"</li>";}).join("") + "</ul></div>";
+  }
+  container.innerHTML=h;
+  montarCodigos(container, collectCodigos(t));
+}
+
+// ---- MAPA DE CARPETAS ----
+function renderMapa(container){
+  var M=MAPA_CARPETAS;
+  var h='<div class="card"><h2>🗺️ Mapa de carpetas</h2><p>'+inlineFmt(M.intro)+"</p>";
+  h+='<div class="tree" id="arbol">';
+  M.tree.forEach(function(l,i){
+    var cls = l.side==="back"?"t-back": l.side==="front"?"t-front":"t-plain";
+    var click = l.info ? ' clickable" data-i="'+i+'"' : '"';
+    h+='<span class="tline '+cls+click+">"+escHTML(l.line)+"</span>\n";
+  });
+  h+='</div><div class="tree-info" id="treeInfo">💡 Hacé clic en cualquier línea resaltada del árbol para ver qué va ahí.</div>';
+  h+='<h3>Reglas para ubicar un archivo</h3><table class="neon-table"><tbody>';
+  M.reglas.forEach(function(r){ h+="<tr><td>"+inlineFmt(r[0])+"</td><td>"+inlineFmt(r[1])+"</td></tr>"; });
+  h+="</tbody></table>";
+  h+='<h3>¿Qué va en BACK y qué en FRONT?</h3><table class="neon-table"><thead><tr><th>Tema</th><th>🟣 BACK</th><th>🔵 FRONT</th></tr></thead><tbody>';
+  M.backFront.forEach(function(r){ h+="<tr><td>"+inlineFmt(r[0])+"</td><td>"+inlineFmt(r[1])+"</td><td>"+inlineFmt(r[2])+"</td></tr>"; });
+  h+="</tbody></table>";
+  h+='<p class="hint" style="color:var(--neon-yellow)">'+inlineFmt(M.notaPuertos)+"</p>";
+  h+='<h3>Flujo de arquitectura</h3>'+renderBloques(M.flujos);
+  h+='<h3>Estilos provistos por los docentes (TP1) y su destino exacto</h3><table class="neon-table"><thead><tr><th>Archivo provisto</th><th>Copiarlo a</th></tr></thead><tbody>';
+  M.estilosTP1.forEach(function(r){ h+="<tr><td>"+inlineFmt(r[0])+"</td><td>"+inlineFmt(r[1])+"</td></tr>"; });
+  h+="</tbody></table></div>";
+  container.innerHTML=h;
+  var info=document.getElementById("treeInfo");
+  Array.prototype.forEach.call(container.querySelectorAll(".tline.clickable"),function(el){
+    el.addEventListener("click",function(){
+      var i=parseInt(el.getAttribute("data-i"),10);
+      var l=MAPA_CARPETAS.tree[i];
+      info.innerHTML="<b>"+escHTML(l.path||"")+"</b> — "+inlineFmt(l.info);
+      Array.prototype.forEach.call(container.querySelectorAll(".tline.sel"),function(x){x.classList.remove("sel");});
+      el.classList.add("sel");
+    });
+  });
+}
+
+// ---- GENERADOR ----
+function valKey(temaId,gid,cid){ return temaId+"|"+gid+"|"+cid; }
+function fieldVal(f, temaId, gid){
+  var k=valKey(temaId,gid,f.id);
+  if(Object.prototype.hasOwnProperty.call(valores,k)) return valores[k];
+  return f.default!==undefined?f.default:(f.tipo==="checkbox"?false:"");
+}
+function optLabel(o){ return typeof o==="object"? o.l : String(o); }
+function optValue(o){ return typeof o==="object"? o.v : String(o); }
+function renderGen(container, g, temaId){
+  if(!g){ container.innerHTML='<div class="card"><h2>⚠️ Falta cargar este apunte</h2><p class="hint">No hay generadores para este tema todavía.</p></div>'; return; }
+  var h='<div class="card"><h2>⚡ '+escHTML(g.nombre)+"</h2>";
+  if(g.desc) h+='<p class="gen-desc">'+inlineFmt(g.desc)+"</p>";
+  h+="</div>";
+  container.innerHTML=h;
+  if(state.openGen===null && g.generadores.length) state.openGen=g.generadores[0].id;
+  g.generadores.forEach(function(gen){
+    var item=document.createElement("div");
+    item.className="gitem"+(state.openGen===gen.id?" open":"");
+    var head=document.createElement("div");
+    head.className="ghead";
+    head.innerHTML='<span class="gtitle">'+escHTML(gen.titulo)+'</span><span class="hint">'+(state.openGen===gen.id?"▲":"▼")+"</span>";
+    head.addEventListener("click",function(){
+      state.openGen = (state.openGen===gen.id)? null : gen.id;
+      saveState(); renderAll();
+    });
+    item.appendChild(head);
+    if(state.openGen===gen.id){
+      var body=document.createElement("div"); body.className="gbody";
+      var split=document.createElement("div"); split.className="gen-split";
+      var fields=document.createElement("div"); fields.className="gen-fields";
+      var result=document.createElement("div"); result.className="gen-result";
+      gen.campos.forEach(function(f){ fields.appendChild(makeField(f, gen, temaId)); });
+      var actions=document.createElement("div"); actions.className="gen-actions";
+      var rb=document.createElement("button"); rb.type="button"; rb.className="btn-reset"; rb.textContent="↺ Restaurar valores de ejemplo";
+      rb.addEventListener("click",function(){
+        gen.campos.forEach(function(f){ delete valores[valKey(temaId,gen.id,f.id)]; });
+        saveState(); renderAll();
+      });
+      actions.appendChild(rb);
+      fields.appendChild(actions);
+      split.appendChild(fields); split.appendChild(result);
+      body.appendChild(split); item.appendChild(body);
+      var files=[];
+      try{ files=gen.salida(readVals(gen,temaId), getOpts()); }
+      catch(err){ result.innerHTML='<p class="field-error">⚠️ Error generando: '+escHTML(err.message)+"</p>"; }
+      pintarSalida(result, files, temaId, gen);
+    }
+    container.appendChild(item);
+  });
+}
+function readVals(gen, temaId){
+  var v={};
+  gen.campos.forEach(function(f){ v[f.id]=fieldVal(f,temaId,gen.id); });
+  return v;
+}
+function makeField(f, gen, temaId){
+  var wrap=document.createElement("div");
+  var cur=fieldVal(f,temaId,gen.id);
+  if(f.tipo==="checkbox"){
+    wrap.className="field check";
+    wrap.innerHTML='<input type="checkbox" id="fld_'+gen.id+"_"+f.id+'"'+(cur?" checked":"")+'><label for="fld_'+gen.id+"_"+f.id+'">'+escHTML(f.label)+"</label>";
+    var cb=wrap.querySelector("input");
+    cb.addEventListener("change",function(){ valores[valKey(temaId,gen.id,f.id)]=cb.checked; saveState(); renderAll(); });
+    return wrap;
+  }
+  wrap.className="field";
+  var lab=document.createElement("label"); lab.textContent=f.label; wrap.appendChild(lab);
+  var input;
+  if(f.tipo==="select"){
+    input=document.createElement("select");
+    f.opciones.forEach(function(o){
+      var op=document.createElement("option"); op.value=optValue(o); op.textContent=optLabel(o);
+      if(String(optValue(o))===String(cur)) op.selected=true;
+      input.appendChild(op);
+    });
+    input.addEventListener("change",function(){ valores[valKey(temaId,gen.id,f.id)]=input.value; saveState(); renderAll(); });
+  } else if(f.tipo==="textarea"){
+    input=document.createElement("textarea"); input.rows=Math.max(2,String(cur).split("\n").length);
+    input.value=cur; if(f.placeholder) input.placeholder=f.placeholder;
+    input.addEventListener("input",function(){ valores[valKey(temaId,gen.id,f.id)]=input.value; saveState(); renderAll(); });
+  } else {
+    input=document.createElement("input");
+    input.type=f.tipo==="number"?"number":"text";
+    input.value=(cur===undefined||cur===null)?"":cur;
+    if(f.placeholder) input.placeholder=f.placeholder;
+    input.addEventListener("input",function(){ valores[valKey(temaId,gen.id,f.id)]=input.value; saveState(); renderAll(); });
+  }
+  wrap.appendChild(input);
+  if(f.hint){ var hp=document.createElement("div"); hp.className="field-help"; hp.textContent=f.hint; wrap.appendChild(hp); }
+  if(f.validate==="pascal"){
+    var err=document.createElement("div"); err.className="field-error";
+    var raw=String(cur||"");
+    if(!raw.trim()){ err.textContent="⚠️ Vacío: se usará un nombre de ejemplo."; wrap.appendChild(err); }
+    else if(raw!==pascal(raw)){ err.textContent="⚠️ Debe ser PascalCase → se corrige automáticamente a \""+pascal(raw)+"\" en el código."; wrap.appendChild(err); }
+  }
+  return wrap;
+}
+function pintarSalida(result, files, temaId, gen){
+  if(!files || !files.length){ result.innerHTML='<p class="empty">Sin salida.</p>'; return; }
+  result.innerHTML="";
+  files.forEach(function(f){
+    var bl=document.createElement("div");
+    bl.className="codeblock"+(f.lado==="BACK"?" back-border":"");
+    var head=document.createElement("div"); head.className="code-head";
+    var badgeTxt = f.lado==="BACK" ? "🟣 BACK" : f.lado==="FRONT" ? "🔵 FRONT" : f.lado;
+    var bs=document.createElement("span"); bs.className="badge "+(f.lado==="BACK"?"back":"front"); bs.textContent=badgeTxt;
+    var ft=document.createElement("span"); ft.className="code-file"; ft.textContent="· "+f.archivo;
+    var ttl=document.createElement("span"); ttl.className="code-title"; ttl.textContent="📄";
+    head.appendChild(ttl); head.appendChild(bs); head.appendChild(ft);
+    var pre=document.createElement("pre"); pre.className="code"; pre.textContent=f.codigo;  // R6: textContent
+    if(files.length>1){
+      var b1=document.createElement("button"); b1.type="button"; b1.className="btn-copy"; b1.textContent="📋 Copiar código";
+      b1.addEventListener("click",function(){ doCopy(f.codigo); });
+      head.appendChild(b1);
+    } else {
+      var b2=document.createElement("button"); b2.type="button"; b2.className="btn-copy"; b2.textContent="📋 Copiar código";
+      b2.addEventListener("click",function(){ doCopy(f.codigo); });
+      head.appendChild(b2);
+    }
+    bl.appendChild(head); bl.appendChild(pre);
+    result.appendChild(bl);
+  });
+  if(files.length>1){
+    var all=document.createElement("button"); all.type="button"; all.className="btn-copyall"; all.textContent="📋 Copiar todo";
+    all.addEventListener("click",function(){
+      doCopy(files.map(function(f){
+        return "// ===== "+f.archivo+"  ("+(f.lado==="BACK"?"🟣 BACK":"🔵 FRONT")+") =====\n"+f.codigo;
+      }).join("\n\n"));
+    });
+    result.appendChild(all);
+  }
+}
+
+// ---- arranque ----
+document.getElementById("tabTeoria").addEventListener("click",function(){ state.sec="teoria"; state.tema="mapa"; saveState(); renderAll(); });
+document.getElementById("tabGen").addEventListener("click",function(){ state.sec="gen"; state.tema=GENERADORES[0].id; saveState(); renderAll(); });
+document.getElementById("mobileNav").addEventListener("change",function(e){ if(e.target.value) selectTema(e.target.value); });
+["optComentarios","optDobles","optTp1"].forEach(function(id){
+  var el=document.getElementById(id);
+  el.addEventListener("change",function(){
+    opts.comentarios=document.getElementById("optComentarios").checked;
+    opts.doubles=document.getElementById("optDobles").checked;
+    opts.tp1=document.getElementById("optTp1").checked;
+    saveState(); renderAll();
+  });
+});
+document.getElementById("buscador").addEventListener("input",function(e){ busqText=e.target.value.trim(); renderSidebar(); });
+document.addEventListener("keydown",function(e){
+  var tag=(e.target.tagName||"").toLowerCase();
+  if(e.key==="/" && tag!=="input" && tag!=="textarea"){ e.preventDefault(); document.getElementById("buscador").focus(); }
+});
+
+loadState();
+state.sec="teoria"; if(!TEORIA.some(function(t){return t.id===state.tema;})) state.tema="mapa";
+renderAll();
+
+</script>
+</body>
+</html>
