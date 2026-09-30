@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SÚPER ARCHIVO DAI — Teoría + Generador de código (offline)</title>
+<style>
+/*__CSS__*/
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="app-title flicker">⚡ SÚPER ARCHIVO DAI</h1>
+  <p class="app-sub">5ta Informática · Instituto Pío IX · Desarrollo de Aplicaciones Informáticas — funciona 100% offline (doble clic). Atajo: <b>/</b> busca.</p>
+
+  <div class="topbar">
+    <div class="main-tabs" role="tablist">
+      <button id="tabTeoria" class="mtab active" type="button">📘 TEORÍA</button>
+      <button id="tabGen" class="mtab" type="button">⚡ GENERADOR</button>
+    </div>
+    <span class="legend"><span class="badge back">🟣 BACK</span><span class="badge front">🔵 FRONT</span></span>
+    <div class="searchbox">
+      <input id="buscador" type="text" placeholder="🔍 Buscar temas y contenido… (tocá / para enfocar)" autocomplete="off">
+    </div>
+    <div class="optgroup">
+      <label title="Comentarios en el código generado"><input type="checkbox" id="optComentarios" checked> ☑ Comentarios</label>
+      <label title="Comillas del código generado"><input type="checkbox" id="optDobles" checked> Comillas "dobles"</label>
+      <label title="TP1: prohibido map/filter/find → usa for/forEach + push"><input type="checkbox" id="optTp1"> Modo TP1 (sin map/filter/find)</label>
+    </div>
+  </div>
+
+  <select id="mobileNav" class="mobilenav" aria-label="Elegir tema"></select>
+
+  <div class="layout">
+    <nav id="sidebar" class="sidebar" aria-label="Temas"></nav>
+    <main id="content"></main>
+  </div>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   SÚPER ARCHIVO DAI — un solo HTML, sin CDN, sin servidor.
+   Motor genérico abajo; los DATOS están en las dos constantes marcadas.
+   ===================================================================== */
+
+/*__HELPERS__*/
+
+/*__MAPA__*/
+
+/*__TEORIA__*/
+
+/*__GENERADORES__*/
+
+/* =====================================================================
+   ============================  MOTOR (no tocar)  =====================
+   ===================================================================== */
+var state = { sec:"teoria", tema:"mapa", openGen:null };
+var opts  = { comentarios:true, dobles:true, tp1:false };
+var valores = {};          // valores editados por generador: key = tema|gen|campo
+// -- localStorage con try/catch (R10) --
+function saveState(){
+  try{
+    localStorage.setItem("superdai", JSON.stringify({ state:state, opts:opts, valores:valores }));
+  }catch(e){ /* si falla, funciona igual */ }
+}
+function loadState(){
+  try{
+    var s = JSON.parse(localStorage.getItem("superdai") || "null");
+    if(s){
+      if(s.state && s.state.sec) state.sec = s.state.sec;
+      if(s.state && s.state.tema) state.tema = s.state.tema;
+      if(s.opts) opts = Object.assign(opts, s.opts);
+      if(s.valores) valores = s.valores;
+    }
+  }catch(e){}
+}
+
+// -- utilidades de escape/formato --
+function escHTML(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function inlineFmt(t){
+  var s=escHTML(t);
+  s=s.replace(/`([^`]+)`/g, function(_,c){return "<code>"+c+"</code>";});
+  s=s.replace(/\*\*([^*]+)\*\*/g, function(_,c){return "<strong>"+c+"</strong>";});
+  return s;
+}
+function hl(text){
+  var s=escHTML(text);
+  if(!busqText) return s;
+  try{
+    var rx=new RegExp("("+busqText.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");
+    return s.replace(rx,"<mark>$1</mark>");
+  }catch(e){ return s; }
+}
+var busqText = "";
+
+// -- copiar con fallback (R3): copia SIEMPRE el string original --
+function toast(msg){
+  var t=document.getElementById("toast");
+  t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._h); t._h=setTimeout(function(){t.classList.remove("show");},1500);
+}
+function doCopy(txt){
+  var ok=false;
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(function(){toast("✅ ¡Copiado!");},
+        function(){legacyCopy(txt);});
+      return;
+    }
+  }catch(e){}
+  legacyCopy(txt);
+  function legacyCopy(t2){
+    var ta=document.createElement("textarea");
+    ta.value=t2; ta.style.position="fixed"; ta.style.left="-9999px";
+    document.body.appendChild(ta); ta.select();
+    try{ ok=document.execCommand("copy"); }catch(e){ ok=false; }
+    document.body.removeChild(ta);
+    toast(ok ? "✅ ¡Copiado!" : "⚠️ No se pudo copiar — seleccioná el código");
+  }
+}
+
+// -- opciones globales --
+function getOpts(){
+  return { comentarios:opts.comentarios, doubles:opts.dobles, tp1:opts.tp1 };
+}
+
+// ---- render general ----
+function temaNombres(){
+  var arr=[];
+  if(state.sec==="teoria"){ arr.push({id:"mapa", nombre:"🗺️ Mapa de carpetas"}); TEORIA.forEach(function(t){arr.push({id:t.id,nombre:t.nombre});}); }
+  else { GENERADORES.forEach(function(g){arr.push({id:g.id,nombre:g.nombre});}); }
+  return arr;
+}
+function renderSidebar(){
+  var sb=document.getElementById("sidebar");
+  var mv=document.getElementById("mobileNav");
+  var names=temaNombres();
+  var filtered=names.filter(function(n){
+    if(!busqText) return true;
+    var hay=[n.nombre];
+    if(state.sec==="teoria"){
+      var t=TEORIA.find(function(x){return x.id===n.id;});
+      if(t) hay.push(searchableDeTema(t));
+    } else {
+      var g=GENERADORES.find(function(x){return x.id===n.id;});
+      if(g) hay.push((g.desc||"")+g.generadores.map(function(x){return x.titulo;}).join(" "));
+    }
+    return hay.join(" ").toLowerCase().indexOf(busqText.toLowerCase())>=0;
+  });
+  var h='<div class="side-label">'+(state.sec==="teoria"?"Temas de teoría":"Temas de generador")+"</div>";
+  filtered.forEach(function(n){
+    h+='<button class="sbtn'+(n.id===state.tema?" active":"")+'" data-id="'+n.id+'" type="button">'+hl(n.nombre)+"</button>";
+  });
+  if(!filtered.length) h+='<p class="hint">Sin resultados para “'+escHTML(busqText)+"”.</p>";
+  sb.innerHTML=h;
+  Array.prototype.forEach.call(sb.querySelectorAll(".sbtn"),function(b){
+    b.addEventListener("click",function(){ selectTema(b.getAttribute("data-id")); });
+  });
+  var mh="<option value=\"\">— Elegí un tema —</option>";
+  filtered.forEach(function(n){ mh+='<option value="'+n.id+'"'+(n.id===state.tema?" selected":"")+">"+escHTML(n.nombre)+"</option>"; });
+  mv.innerHTML=mh;
+}
+function searchableDeTema(t){
+  var parts=[t.nombre,t.intro,(t.claves||[]).join(" "),(t.errores||[]).join(" "),
+    (t.donde||[]).join(" ")];
+  (t.codigos||[]).forEach(function(c){parts.push(c.titulo||"",c.archivo||"");});
+  (t.extra||[]).forEach(function(b){ if(b.x) parts.push(b.x); });
+  return parts.join(" ");
+}
+function selectTema(id){
+  state.tema=id; state.openGen=null; saveState(); renderAll();
+  document.getElementById("content").scrollIntoView({block:"start"});
+}
+function renderAll(){
+  document.getElementById("tabTeoria").classList.toggle("active", state.sec==="teoria");
+  document.getElementById("tabGen").classList.toggle("active", state.sec==="gen");
+  var names=temaNombres();
+  if(!names.some(function(n){return n.id===state.tema;})) state.tema=names[0].id;
+  renderSidebar();
+  var c=document.getElementById("content");
+  c.innerHTML="";
+  if(state.tema==="mapa") renderMapa(c);
+  else if(state.sec==="teoria") renderTeoria(c, TEORIA.find(function(t){return t.id===state.tema;}), state.tema);
+  else renderGen(c, GENERADORES.find(function(g){return g.id===state.tema;}), state.tema);
+}
+
+// ---- TEORÍA ----
+function tableHTML(tb){
+  var h='<table class="neon-table"><thead><tr>'+tb.head.map(function(x){return "<th>"+inlineFmt(x)+"</th>";}).join("")+"</tr></thead><tbody>";
+  tb.rows.forEach(function(r){ h+="<tr>"+r.map(function(c){return "<td>"+inlineFmt(c)+"</td>";}).join("")+"</tr>"; });
+  return h+"</tbody></table>";
+}
+function flowHTML(f){
+  return '<div class="flow">'+f.parts.map(function(p,i){
+    return '<span class="fbox'+(p.lado==="BACK"?" back":"")+'">'+inlineFmt(p.t)+"</span>"+
+           (p.arrow?'<span class="farrow">'+escHTML(p.arrow)+"</span>":"");
+  }).join("")+"</div>";
+}
+function renderBloques(arr){
+  var h="";
+  arr.forEach(function(b){
+    if(b.t==="h3") h+="<h3>"+hl(b.x)+"</h3>";
+    else if(b.t==="p") h+="<p>"+inlineFmt(hl(b.x))+"</p>";
+    else if(b.t==="ul") h+="<ul>"+b.items.map(function(i){return "<li>"+inlineFmt(hl(i))+"</li>";}).join("")+"</ul>";
+    else if(b.t==="warn") h+='<ul class="warn-list">'+b.items.map(function(i){return "<li>"+inlineFmt(hl(i))+"</li>";}).join("")+"</ul>";
+    else if(b.t==="table") h+=tableHTML(b);
+    else if(b.t==="flow") h+=flowHTML(b);
+    else if(b.t==="code") h+=codeBlockStr("", b.x||"", /BACK/.test(b.x||"")?"BACK":"FRONT");
+    else if(b.t==="note") h+='<p class="hint" style="font-size:13px;margin:6px 0">'+inlineFmt(hl(b.x))+"</p>";
+  });
+  return h;
+}
+function codeBlockStr(title, archivo, lado){
+  var badge = lado==="BACK" ? '<span class="badge back">🟣 BACK</span>'
+            : lado==="FRONT" ? '<span class="badge front">🔵 FRONT</span>' : "";
+  return '<div class="codeblock'+(lado==="BACK"?" back-border":"")+'"><div class="code-head"><span class="code-title">'+escHTML(title||"Código")+"</span>"
+    +badge+(archivo?' <span class="code-file">· '+escHTML(archivo)+"</span>":"")
+    +'</div><pre class="code"></pre></div>';
+}
+function collectCodigos(t){
+  var list=[];
+  (t.codigos||[]).forEach(function(c){list.push(c);});
+  (t.extra||[]).forEach(function(b){
+    if(b.t==="code"){
+      var x=b.x||"";
+      list.push({ titulo:"Código", archivo:x.replace(/\s*—\s*(🟣 BACK|🔵 FRONT)/,""), lado:/BACK/.test(x)?"BACK":"FRONT", codigo:b.codigo });
+    }
+  });
+  return list;
+}
+function montarCodigos(root, codigos){
+  var blocks=root.querySelectorAll(".codeblock");
+  codigos.forEach(function(c,i){
+    if(!blocks[i]) return;
+    blocks[i].querySelector("pre.code").textContent=c.codigo;   // textContent: nunca innerHTML (R6)
+    var btn=document.createElement("button");
+    btn.className="btn-copy"; btn.type="button"; btn.textContent="📋 Copiar";
+    btn.addEventListener("click",function(){ doCopy(c.codigo); });
+    blocks[i].querySelector(".code-head").appendChild(btn);
+  });
+}
+function renderTeoria(container, t, temaId){
+  if(!t){ container.innerHTML='<div class="card"><h2>⚠️ Falta cargar este apunte</h2><p class="hint">No encuentro el archivo .md de este tema en el repo. No invento contenido (R12).</p></div>'; return; }
+  var h='<div class="card"><h2>'+hl(t.nombre)+"</h2>";
+  h+='<h3 style="margin-top:4px">Qué es / para qué sirve</h3><p>'+inlineFmt(hl(t.intro))+"</p>";
+  h+='<h3>Conceptos y reglas clave</h3><ul>'+t.claves.map(function(k){return "<li>"+inlineFmt(hl(k))+"</li>";}).join("")+"</ul>";
+  if(t.extra && t.extra.length){ h+=renderBloques(t.extra); }
+  h+="</div>";
+  if(t.donde && t.donde.length){
+    h+='<div class="card"><h3 style="margin-top:0">📍 Dónde va cada archivo</h3><table class="neon-table"><thead><tr><th>Lado</th><th>Carpeta exacta</th><th>Archivo</th><th>Qué contiene</th></tr></thead><tbody>';
+    t.donde.forEach(function(r){
+      var lado=/🟣|BACK/.test(r[0])?"back":"front";
+      h+="<tr><td><span class=\"badge "+lado+"\">"+escHTML(r[0])+"</span></td><td><code>"+escHTML(r[1])+"</code></td><td><code>"+escHTML(r[2])+"</code></td><td>"+inlineFmt(r[3])+"</td></tr>";
+    });
+    h+="</tbody></table></div>";
+  }
+  if(t.codigos && t.codigos.length){
+    h+='<div class="card"><h3 style="margin-top:0">Código base</h3>';
+    t.codigos.forEach(function(c){ h+=codeBlockStr(c.titulo, c.archivo, c.lado); });
+    h+="</div>";
+  }
+  if(t.errores && t.errores.length){
+    h+='<div class="card"><h3 style="margin-top:0">⚠️ Errores típicos</h3><ul class="warn-list">'
+      + t.errores.map(function(e){return "<li>"+inlineFmt(hl(e))+"</li>";}).join("") + "</ul></div>";
+  }
+  container.innerHTML=h;
+  montarCodigos(container, collectCodigos(t));
+}
+
+// ---- MAPA DE CARPETAS ----
+function renderMapa(container){
+  var M=MAPA_CARPETAS;
+  var h='<div class="card"><h2>🗺️ Mapa de carpetas</h2><p>'+inlineFmt(M.intro)+"</p>";
+  h+='<div class="tree" id="arbol">';
+  M.tree.forEach(function(l,i){
+    var cls = l.side==="back"?"t-back": l.side==="front"?"t-front":"t-plain";
+    var click = l.info ? ' clickable" data-i="'+i+'"' : '"';
+    h+='<span class="tline '+cls+click+">"+escHTML(l.line)+"</span>\n";
+  });
+  h+='</div><div class="tree-info" id="treeInfo">💡 Hacé clic en cualquier línea resaltada del árbol para ver qué va ahí.</div>';
+  h+='<h3>Reglas para ubicar un archivo</h3><table class="neon-table"><tbody>';
+  M.reglas.forEach(function(r){ h+="<tr><td>"+inlineFmt(r[0])+"</td><td>"+inlineFmt(r[1])+"</td></tr>"; });
+  h+="</tbody></table>";
+  h+='<h3>¿Qué va en BACK y qué en FRONT?</h3><table class="neon-table"><thead><tr><th>Tema</th><th>🟣 BACK</th><th>🔵 FRONT</th></tr></thead><tbody>';
+  M.backFront.forEach(function(r){ h+="<tr><td>"+inlineFmt(r[0])+"</td><td>"+inlineFmt(r[1])+"</td><td>"+inlineFmt(r[2])+"</td></tr>"; });
+  h+="</tbody></table>";
+  h+='<p class="hint" style="color:var(--neon-yellow)">'+inlineFmt(M.notaPuertos)+"</p>";
+  h+='<h3>Flujo de arquitectura</h3>'+renderBloques(M.flujos);
+  h+='<h3>Estilos provistos por los docentes (TP1) y su destino exacto</h3><table class="neon-table"><thead><tr><th>Archivo provisto</th><th>Copiarlo a</th></tr></thead><tbody>';
+  M.estilosTP1.forEach(function(r){ h+="<tr><td>"+inlineFmt(r[0])+"</td><td>"+inlineFmt(r[1])+"</td></tr>"; });
+  h+="</tbody></table></div>";
+  container.innerHTML=h;
+  var info=document.getElementById("treeInfo");
+  Array.prototype.forEach.call(container.querySelectorAll(".tline.clickable"),function(el){
+    el.addEventListener("click",function(){
+      var i=parseInt(el.getAttribute("data-i"),10);
+      var l=MAPA_CARPETAS.tree[i];
+      info.innerHTML="<b>"+escHTML(l.path||"")+"</b> — "+inlineFmt(l.info);
+      Array.prototype.forEach.call(container.querySelectorAll(".tline.sel"),function(x){x.classList.remove("sel");});
+      el.classList.add("sel");
+    });
+  });
+}
+
+// ---- GENERADOR ----
+function valKey(temaId,gid,cid){ return temaId+"|"+gid+"|"+cid; }
+function fieldVal(f, temaId, gid){
+  var k=valKey(temaId,gid,f.id);
+  if(Object.prototype.hasOwnProperty.call(valores,k)) return valores[k];
+  return f.default!==undefined?f.default:(f.tipo==="checkbox"?false:"");
+}
+function optLabel(o){ return typeof o==="object"? o.l : String(o); }
+function optValue(o){ return typeof o==="object"? o.v : String(o); }
+function renderGen(container, g, temaId){
+  if(!g){ container.innerHTML='<div class="card"><h2>⚠️ Falta cargar este apunte</h2><p class="hint">No hay generadores para este tema todavía.</p></div>'; return; }
+  var h='<div class="card"><h2>⚡ '+escHTML(g.nombre)+"</h2>";
+  if(g.desc) h+='<p class="gen-desc">'+inlineFmt(g.desc)+"</p>";
+  h+="</div>";
+  container.innerHTML=h;
+  if(state.openGen===null && g.generadores.length) state.openGen=g.generadores[0].id;
+  g.generadores.forEach(function(gen){
+    var item=document.createElement("div");
+    item.className="gitem"+(state.openGen===gen.id?" open":"");
+    var head=document.createElement("div");
+    head.className="ghead";
+    head.innerHTML='<span class="gtitle">'+escHTML(gen.titulo)+'</span><span class="hint">'+(state.openGen===gen.id?"▲":"▼")+"</span>";
+    head.addEventListener("click",function(){
+      state.openGen = (state.openGen===gen.id)? null : gen.id;
+      saveState(); renderAll();
+    });
+    item.appendChild(head);
+    if(state.openGen===gen.id){
+      var body=document.createElement("div"); body.className="gbody";
+      var split=document.createElement("div"); split.className="gen-split";
+      var fields=document.createElement("div"); fields.className="gen-fields";
+      var result=document.createElement("div"); result.className="gen-result";
+      gen.campos.forEach(function(f){ fields.appendChild(makeField(f, gen, temaId)); });
+      var actions=document.createElement("div"); actions.className="gen-actions";
+      var rb=document.createElement("button"); rb.type="button"; rb.className="btn-reset"; rb.textContent="↺ Restaurar valores de ejemplo";
+      rb.addEventListener("click",function(){
+        gen.campos.forEach(function(f){ delete valores[valKey(temaId,gen.id,f.id)]; });
+        saveState(); renderAll();
+      });
+      actions.appendChild(rb);
+      fields.appendChild(actions);
+      split.appendChild(fields); split.appendChild(result);
+      body.appendChild(split); item.appendChild(body);
+      var files=[];
+      try{ files=gen.salida(readVals(gen,temaId), getOpts()); }
+      catch(err){ result.innerHTML='<p class="field-error">⚠️ Error generando: '+escHTML(err.message)+"</p>"; }
+      pintarSalida(result, files, temaId, gen);
+    }
+    container.appendChild(item);
+  });
+}
+function readVals(gen, temaId){
+  var v={};
+  gen.campos.forEach(function(f){ v[f.id]=fieldVal(f,temaId,gen.id); });
+  return v;
+}
+function makeField(f, gen, temaId){
+  var wrap=document.createElement("div");
+  var cur=fieldVal(f,temaId,gen.id);
+  if(f.tipo==="checkbox"){
+    wrap.className="field check";
+    wrap.innerHTML='<input type="checkbox" id="fld_'+gen.id+"_"+f.id+'"'+(cur?" checked":"")+'><label for="fld_'+gen.id+"_"+f.id+'">'+escHTML(f.label)+"</label>";
+    var cb=wrap.querySelector("input");
+    cb.addEventListener("change",function(){ valores[valKey(temaId,gen.id,f.id)]=cb.checked; saveState(); renderAll(); });
+    return wrap;
+  }
+  wrap.className="field";
+  var lab=document.createElement("label"); lab.textContent=f.label; wrap.appendChild(lab);
+  var input;
+  if(f.tipo==="select"){
+    input=document.createElement("select");
+    f.opciones.forEach(function(o){
+      var op=document.createElement("option"); op.value=optValue(o); op.textContent=optLabel(o);
+      if(String(optValue(o))===String(cur)) op.selected=true;
+      input.appendChild(op);
+    });
+    input.addEventListener("change",function(){ valores[valKey(temaId,gen.id,f.id)]=input.value; saveState(); renderAll(); });
+  } else if(f.tipo==="textarea"){
+    input=document.createElement("textarea"); input.rows=Math.max(2,String(cur).split("\n").length);
+    input.value=cur; if(f.placeholder) input.placeholder=f.placeholder;
+    input.addEventListener("input",function(){ valores[valKey(temaId,gen.id,f.id)]=input.value; saveState(); renderAll(); });
+  } else {
+    input=document.createElement("input");
+    input.type=f.tipo==="number"?"number":"text";
+    input.value=(cur===undefined||cur===null)?"":cur;
+    if(f.placeholder) input.placeholder=f.placeholder;
+    input.addEventListener("input",function(){ valores[valKey(temaId,gen.id,f.id)]=input.value; saveState(); renderAll(); });
+  }
+  wrap.appendChild(input);
+  if(f.hint){ var hp=document.createElement("div"); hp.className="field-help"; hp.textContent=f.hint; wrap.appendChild(hp); }
+  if(f.validate==="pascal"){
+    var err=document.createElement("div"); err.className="field-error";
+    var raw=String(cur||"");
+    if(!raw.trim()){ err.textContent="⚠️ Vacío: se usará un nombre de ejemplo."; wrap.appendChild(err); }
+    else if(raw!==pascal(raw)){ err.textContent="⚠️ Debe ser PascalCase → se corrige automáticamente a \""+pascal(raw)+"\" en el código."; wrap.appendChild(err); }
+  }
+  return wrap;
+}
+function pintarSalida(result, files, temaId, gen){
+  if(!files || !files.length){ result.innerHTML='<p class="empty">Sin salida.</p>'; return; }
+  result.innerHTML="";
+  files.forEach(function(f){
+    var bl=document.createElement("div");
+    bl.className="codeblock"+(f.lado==="BACK"?" back-border":"");
+    var head=document.createElement("div"); head.className="code-head";
+    var badgeTxt = f.lado==="BACK" ? "🟣 BACK" : f.lado==="FRONT" ? "🔵 FRONT" : f.lado;
+    var bs=document.createElement("span"); bs.className="badge "+(f.lado==="BACK"?"back":"front"); bs.textContent=badgeTxt;
+    var ft=document.createElement("span"); ft.className="code-file"; ft.textContent="· "+f.archivo;
+    var ttl=document.createElement("span"); ttl.className="code-title"; ttl.textContent="📄";
+    head.appendChild(ttl); head.appendChild(bs); head.appendChild(ft);
+    var pre=document.createElement("pre"); pre.className="code"; pre.textContent=f.codigo;  // R6: textContent
+    if(files.length>1){
+      var b1=document.createElement("button"); b1.type="button"; b1.className="btn-copy"; b1.textContent="📋 Copiar código";
+      b1.addEventListener("click",function(){ doCopy(f.codigo); });
+      head.appendChild(b1);
+    } else {
+      var b2=document.createElement("button"); b2.type="button"; b2.className="btn-copy"; b2.textContent="📋 Copiar código";
+      b2.addEventListener("click",function(){ doCopy(f.codigo); });
+      head.appendChild(b2);
+    }
+    bl.appendChild(head); bl.appendChild(pre);
+    result.appendChild(bl);
+  });
+  if(files.length>1){
+    var all=document.createElement("button"); all.type="button"; all.className="btn-copyall"; all.textContent="📋 Copiar todo";
+    all.addEventListener("click",function(){
+      doCopy(files.map(function(f){
+        return "// ===== "+f.archivo+"  ("+(f.lado==="BACK"?"🟣 BACK":"🔵 FRONT")+") =====\n"+f.codigo;
+      }).join("\n\n"));
+    });
+    result.appendChild(all);
+  }
+}
+
+// ---- arranque ----
+document.getElementById("tabTeoria").addEventListener("click",function(){ state.sec="teoria"; state.tema="mapa"; saveState(); renderAll(); });
+document.getElementById("tabGen").addEventListener("click",function(){ state.sec="gen"; state.tema=GENERADORES[0].id; saveState(); renderAll(); });
+document.getElementById("mobileNav").addEventListener("change",function(e){ if(e.target.value) selectTema(e.target.value); });
+["optComentarios","optDobles","optTp1"].forEach(function(id){
+  var el=document.getElementById(id);
+  el.addEventListener("change",function(){
+    opts.comentarios=document.getElementById("optComentarios").checked;
+    opts.doubles=document.getElementById("optDobles").checked;
+    opts.tp1=document.getElementById("optTp1").checked;
+    saveState(); renderAll();
+  });
+});
+document.getElementById("buscador").addEventListener("input",function(e){ busqText=e.target.value.trim(); renderSidebar(); });
+document.addEventListener("keydown",function(e){
+  var tag=(e.target.tagName||"").toLowerCase();
+  if(e.key==="/" && tag!=="input" && tag!=="textarea"){ e.preventDefault(); document.getElementById("buscador").focus(); }
+});
+
+loadState();
+document.getElementById("optComentarios").checked=opts.comentarios;
+document.getElementById("optDobles").checked=opts.doubles;
+document.getElementById("optTp1").checked=opts.tp1;
+renderAll();
+</script>
+</body>
+</html>
