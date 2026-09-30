@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SÚPER ARCHIVO DAI ⚡</title>
+<style>
+:root{
+  --bg:#07030f; --bg2:#0d0620;
+  --neon-cyan:#00f0ff;   /* FRONT */
+  --neon-magenta:#ff2bd6;/* BACK  */
+  --neon-green:#39ff14;
+  --neon-violet:#b026ff;
+  --neon-yellow:#fff200;
+  --txt:#e8e6f5; --dim:#9a94b8;
+  --panel:#0c0718; --panel2:#120a24; --line:#241640;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Segoe UI', system-ui, sans-serif;
+  color:var(--txt); min-height:100vh; padding-bottom:60px;
+  background:
+    linear-gradient(rgba(176,38,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(176,38,255,.05) 1px, transparent 1px),
+    radial-gradient(1200px 600px at 80% -10%, #1a0a33 0%, transparent 60%),
+    linear-gradient(160deg, var(--bg) 0%, var(--bg2) 100%);
+  background-size:34px 34px, 34px 34px, auto, auto;
+  background-attachment:fixed;
+}
+header{padding:18px 16px 8px;text-align:center}
+.neon-title{
+  font-size:clamp(22px,4vw,38px);font-weight:800;letter-spacing:3px;color:#fff;
+  text-shadow:0 0 6px var(--neon-cyan),0 0 16px var(--neon-cyan),0 0 32px var(--neon-violet);
+  animation:flicker 6s infinite;
+}
+@keyframes flicker{0%,91%,94%,97%,100%{opacity:1}92%{opacity:.75}95%{opacity:.85}}
+.subtitle{color:var(--dim);font-size:13px;margin-top:4px}
+/* ===== topbar ===== */
+.topbar{display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:center;align-items:center;
+  padding:10px 14px;margin:12px auto 0;max-width:1400px;border:1px solid var(--line);
+  border-radius:12px;background:rgba(12,7,24,.8)}
+.seg{display:flex;gap:6px}
+.main-tab{background:none;border:1px solid var(--line);color:var(--dim);font-weight:700;
+  padding:8px 18px;border-radius:10px;cursor:pointer;font-size:15px;font-family:inherit}
+.main-tab.active{color:#fff;border-color:var(--neon-cyan);box-shadow:0 0 8px var(--neon-cyan), inset 0 0 8px rgba(0,240,255,.15);text-shadow:0 0 6px var(--neon-cyan)}
+.opt{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--dim);cursor:pointer;user-select:none}
+.opt input{accent-color:var(--neon-violet);width:16px;height:16px;cursor:pointer}
+.opt.tp1.on{color:var(--neon-yellow);text-shadow:0 0 6px rgba(255,242,0,.6)}
+.searchwrap{position:relative}
+#buscador{background:#0a0518;border:1px solid var(--neon-violet);color:var(--txt);border-radius:10px;
+  padding:8px 12px;font-family:inherit;font-size:14px;width:230px;outline:none}
+#buscador:focus{box-shadow:0 0 8px var(--neon-violet)}
+.kbd-hint{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:11px;border:1px solid var(--line);border-radius:4px;padding:1px 5px;pointer-events:none}
+/* ===== layout ===== */
+.layout{display:flex;gap:16px;max-width:1400px;margin:14px auto 0;padding:0 14px}
+.sidebar{width:255px;flex-shrink:0;position:sticky;top:10px;align-self:flex-start;max-height:calc(100vh - 30px);overflow:auto}
+.sidebar select{display:none;width:100%}
+.theme-btn{display:block;width:100%;text-align:left;background:rgba(12,7,24,.7);border:1px solid var(--line);
+  color:var(--dim);padding:9px 12px;border-radius:10px;margin-bottom:7px;cursor:pointer;font-family:inherit;font-size:13.5px;line-height:1.35}
+.theme-btn:hover{border-color:var(--neon-violet);color:var(--txt)}
+.theme-btn.active{color:#fff;border-color:var(--neon-cyan);box-shadow:0 0 8px rgba(0,240,255,.55);text-shadow:0 0 5px var(--neon-cyan)}
+.content{flex:1;min-width:0}
+/* ===== legend ===== */
+.legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:12px;font-size:12.5px;color:var(--dim)}
+.badge{display:inline-block;font-weight:800;font-size:11px;letter-spacing:1px;border-radius:6px;padding:2px 8px;vertical-align:middle}
+.badge.front{color:var(--neon-cyan);border:1px solid var(--neon-cyan);box-shadow:0 0 6px rgba(0,240,255,.5);text-shadow:0 0 4px var(--neon-cyan)}
+.badge.back{color:var(--neon-magenta);border:1px solid var(--neon-magenta);box-shadow:0 0 6px rgba(255,43,214,.5);text-shadow:0 0 4px var(--neon-magenta)}
+/* ===== cards & sections ===== */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:16px;box-shadow:0 0 18px rgba(176,38,255,.07)}
+.card h2{color:#fff;font-size:20px;margin-bottom:10px;text-shadow:0 0 8px var(--neon-violet)}
+.card h3{color:var(--neon-cyan);font-size:15px;margin:16px 0 8px;text-shadow:0 0 6px rgba(0,240,255,.5)}
+.theory-intro{color:var(--txt);font-size:14.5px;line-height:1.55;margin-bottom:6px}
+ul.keys{margin:6px 0 4px 20px}
+ul.keys li{margin:4px 0;font-size:14px;line-height:1.5}
+code.inline{font-family:Consolas,'Courier New',monospace;background:#160c2a;border:1px solid var(--line);
+  border-radius:5px;padding:1px 6px;font-size:.9em;color:#c9f7ff}
+mark{background:rgba(255,242,0,.28);color:var(--neon-yellow);border-radius:3px;padding:0 2px}
+table{border-collapse:collapse;width:100%;margin:8px 0;font-size:13.5px}
+th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+th{color:var(--neon-cyan);background:#0e0820;font-size:12.5px;letter-spacing:.5px}
+td code.inline, th code.inline{white-space:nowrap}
+.warn-list li{margin:6px 0;font-size:14px;line-height:1.5;color:#ffd9f4}
+.warn-list li::marker{content:"⚠️ "}
+/* ===== code blocks ===== */
+.codeblock{margin:12px 0}
+.code-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#0e0820;
+  border:1px solid var(--line);border-bottom:none;border-radius:10px 10px 0 0;padding:7px 10px}
+.code-title{color:var(--txt);font-weight:700;font-size:13px;margin-right:4px}
+.code-file{font-family:Consolas,'Courier New',monospace;font-size:12.5px;color:var(--neon-yellow)}
+pre.code{background:#0a0514;border:1px solid var(--line);border-radius:0 0 10px 10px;padding:12px 14px;
+  overflow:auto;font-family:Consolas,'Courier New',monospace;font-size:13px;line-height:1.5;color:#d8f3ff;tab-size:2}
+.btn-copy{margin-left:auto;background:#071b07;color:var(--neon-green);border:1px solid var(--neon-green);
+  box-shadow:0 0 6px rgba(57,255,20,.4);border-radius:8px;padding:5px 12px;font-weight:700;cursor:pointer;font-family:inherit;font-size:12.5px}
+.btn-copy:hover{box-shadow:0 0 12px rgba(57,255,20,.8)}
+/* ===== generator cards ===== */
+.gen-card{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--neon-violet);
+  border-radius:12px;margin-bottom:12px;overflow:hidden}
+.gen-head{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;user-select:none}
+.gen-head:hover{background:rgba(176,38,255,.07)}
+.gen-head .gt{font-weight:700;color:#fff;font-size:15px;flex:1}
+.gen-head .chev{color:var(--neon-violet);transition:transform .18s;font-size:13px}
+.gen-card.open .chev{transform:rotate(90deg)}
+.gen-body{display:none;border-top:1px solid var(--line);padding:14px 16px}
+.gen-card.open .gen-body{display:block}
+.gen-grid{display:grid;grid-template-columns:minmax(240px,360px) 1fr;gap:18px}
+.field{margin-bottom:11px}
+.field label{display:block;font-size:12.5px;color:var(--dim);margin-bottom:4px;font-weight:600}
+.field input[type=text],.field input[type=number],.field select,.field textarea{
+  width:100%;background:#0a0518;border:1px solid var(--line);color:var(--txt);border-radius:8px;
+  padding:8px 10px;font-family:inherit;font-size:14px;outline:none}
+.field textarea{font-family:Consolas,'Courier New',monospace;font-size:13px;min-height:64px;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--neon-cyan);box-shadow:0 0 6px rgba(0,240,255,.4)}
+.field.check{display:flex;align-items:center;gap:8px}
+.field.check label{margin:0;font-size:13.5px;color:var(--txt)}
+.field.check input{width:17px;height:17px;accent-color:var(--neon-violet)}
+.hint{font-size:11.5px;color:var(--dim);margin-top:3px}
+.aviso{font-size:12px;color:#ff6b6b;border:1px solid #ff6b6b;border-radius:6px;padding:3px 8px;margin-top:4px;display:inline-block}
+.out-col{min-width:0}
+.btn-reset{background:none;border:1px solid var(--neon-violet);color:var(--neon-violet);border-radius:8px;
+  padding:5px 12px;cursor:pointer;font-family:inherit;font-size:12.5px;margin-bottom:10px}
+.btn-reset:hover{box-shadow:0 0 8px var(--neon-violet)}
+.btn-copy-all{background:#071b07;color:var(--neon-green);border:1px solid var(--neon-green);border-radius:8px;
+  padding:6px 14px;cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;margin-bottom:10px;box-shadow:0 0 6px rgba(57,255,20,.35)}
+.missing{padding:30px;text-align:center;color:var(--dim);border:1px dashed var(--neon-magenta);border-radius:14px}
+/* ===== folder map ===== */
+.tree{font-family:Consolas,'Courier New',monospace;font-size:13px;line-height:1.75;overflow-x:auto;white-space:pre}
+.tl{display:block;padding:1px 6px;border-radius:6px}
+.tl.front{color:var(--neon-cyan)}
+.tl.back{color:var(--neon-magenta)}
+.tl.plain{color:var(--dim)}
+.tl.click{cursor:pointer;color:var(--txt)}
+.tl.click:hover{background:rgba(0,240,255,.08);box-shadow:0 0 6px rgba(0,240,255,.3)}
+.tl.sel{background:rgba(0,240,255,.14);box-shadow:0 0 8px rgba(0,240,255,.4)}
+.map-detail{border:1px solid var(--neon-cyan);box-shadow:0 0 10px rgba(0,240,255,.25);border-radius:10px;padding:12px 14px;margin-top:12px;font-size:14px;line-height:1.5}
+.flowrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.fbox{border-radius:9px;padding:8px 12px;font-weight:700;font-size:13px;background:#0a0514}
+.fbox.front{border:1px solid var(--neon-cyan);color:var(--neon-cyan);box-shadow:0 0 8px rgba(0,240,255,.4)}
+.fbox.back{border:1px solid var(--neon-magenta);color:var(--neon-magenta);box-shadow:0 0 8px rgba(255,43,214,.4)}
+.farrow{color:var(--neon-yellow);font-weight:700}
+/* ===== toast ===== */
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:#071b07;border:1px solid var(--neon-green);color:var(--neon-green);font-weight:800;
+  padding:10px 22px;border-radius:12px;box-shadow:0 0 16px rgba(57,255,20,.6);
+  transition:all .2s;z-index:99;pointer-events:none;font-size:15px}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+footer{text-align:center;color:var(--dim);font-size:12px;margin-top:26px}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.theme-btn:focus-visible{
+  outline:2px solid var(--neon-cyan);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){ *{animation:none !important;transition:none !important} }
+@media (max-width:900px){
+  .sidebar{width:100%;position:static;max-height:none}
+  .sidebar select{display:block;background:#0a0518;border:1px solid var(--neon-cyan);color:var(--txt);border-radius:10px;padding:10px;font-family:inherit;font-size:14px}
+  .sidebar .theme-btn{display:none}
+  .layout{flex-direction:column}
+  .gen-grid{grid-template-columns:1fr}
+  #buscador{width:150px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="neon-title">⚡ SÚPER ARCHIVO DAI ⚡</div>
+  <div class="subtitle">Desarrollo de Aplicaciones Informáticas · 5º Informática · Instituto Pío IX — apuntes offline</div>
+</header>
+
+<div class="topbar">
+  <div class="seg">
+    <button class="main-tab" data-seccion="teoria" id="tab-teoria">📘 TEORÍA</button>
+    <button class="main-tab" data-seccion="generador" id="tab-generador">⚡ GENERADOR</button>
+  </div>
+  <label class="opt"><input type="checkbox" id="opt-comentarios" checked> ☑ Comentarios en el código</label>
+  <label class="opt"><input type="checkbox" id="opt-comillas" checked> Comillas <span id="lbl-comillas">dobles</span></label>
+  <label class="opt tp1" id="wrap-tp1"><input type="checkbox" id="opt-tp1"> 🚫 Modo TP1: sin map / filter / find</label>
+  <div class="searchwrap"><input id="buscador" type="text" placeholder="Buscar teoría… ( / )" autocomplete="off"><span class="kbd-hint">/</span></div>
+</div>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar"></nav>
+  <main class="content" id="contenido"></main>
+</div>
+
+<div id="toast"></div>
+<footer>Hecho con los apuntes del repo — un solo archivo, 100% offline. Leyenda: 🔵 FRONT = cyan · 🟣 BACK = magenta</footer>
+
+<script>
+"use strict";
