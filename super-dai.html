@@ -241,6 +241,21 @@ function pushLista(arr, st, opt, pad){
     arr.push(pad+"))}");
   }
 }
+function pushMsgList(arr, opt, pad, expr){
+  // lista de mensajes: .map normally; Modo TP1 → itemsJSX con forEach + push (sin map/filter/find)
+  const e = expr || "{JSON.stringify(m)}";
+  if(opt.tp1){
+    arr.push("  let itemsJSX = [];");
+    arr.push("  mensajes.forEach((m, i) => {");
+    arr.push("    itemsJSX.push(<li key={i}>"+e+"</li>);");
+    arr.push("  });", "");
+    arr.push(pad+"{itemsJSX}");
+  } else {
+    arr.push(pad+"{mensajes.map((m, i) => (");
+    arr.push(pad+"  <li key={i}>"+e+"</li>");
+    arr.push(pad+"))}");
+  }
+}
 
 
 // =====================================================================
@@ -2750,9 +2765,16 @@ const GENERADORES = [
         arr.push("      <p>{isConnected ? \"🟢 Conectado al servidor\" : \"🔴 Desconectado\"}</p>");
         arr.push("      <button onClick={enviarPing}>Ping a todos</button>");
         arr.push("      <ul>");
-        arr.push("        {mensajes.map((m, i) => (");
-        arr.push("          <li key={i}>{JSON.stringify(m)}</li>");
-        arr.push("        ))}");
+        if(opt.tp1){
+          arr.push("  let itemsJSX = [];");
+          arr.push("  mensajes.forEach((m, i) => { itemsJSX.push(<li key={i}>{JSON.stringify(m)}</li>); });");
+          arr.push("");
+          arr.push("        {itemsJSX}");
+        } else {
+          arr.push("        {mensajes.map((m, i) => (");
+          arr.push("            <li key={i}>{JSON.stringify(m)}</li>");
+          arr.push("        ))}");
+        }
         arr.push("      </ul>");
         arr.push("    </div>");
         arr.push("  );");
@@ -2818,9 +2840,16 @@ const GENERADORES = [
         arr.push("      <h1>Sala: {"+(v.sala||"sala")+"}</h1>");
         arr.push("      <p>Usuario: {"+(v.usuario||"usuario")+"} · {isConnected ? \"🟢\" : \"🔴\"}</p>");
         arr.push("      <ul>");
-        arr.push("        {mensajes.map((m, i) => (");
-        arr.push("          <li key={i}>{JSON.stringify(m)}</li>");
-        arr.push("        ))}");
+        if(opt.tp1){
+          arr.push("  let itemsJSX = [];");
+          arr.push("  mensajes.forEach((m, i) => { itemsJSX.push(<li key={i}>{JSON.stringify(m)}</li>); });");
+          arr.push("");
+          arr.push("        {itemsJSX}");
+        } else {
+          arr.push("        {mensajes.map((m, i) => (");
+          arr.push("            <li key={i}>{JSON.stringify(m)}</li>");
+          arr.push("        ))}");
+        }
         arr.push("      </ul>");
         arr.push("      <input type=\"text\" value={texto} onChange={e => setTexto(e.target.value)} placeholder=\"Mensaje...\" />");
         arr.push("      <button onClick={enviar}>Enviar</button>");
