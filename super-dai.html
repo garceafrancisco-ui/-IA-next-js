@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SÚPER DAI — Distribución de archivos</title>
+<style>
+  /* ============ VARIABLES NEÓN CLÁSICO ============ */
+  :root {
+    --bg1: #07030f;
+    --bg2: #0d0620;
+    --cyan: #00f0ff;   /* FRONT (siempre) */
+    --magenta: #ff2bd6;/* BACK  (siempre) */
+    --green: #39ff14;  /* Copiar / OK */
+    --violet: #b026ff;
+    --yellow: #fff200;
+    --text: #e8e6f0;
+    --text-dim: #a9a4c0;
+    --panel: #120a24;
+    --panel2: #170d2e;
+    --border: #2c1b4d;
+    --mono: Consolas, 'Courier New', monospace;
+    --sans: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    color: var(--text);
+    background:
+      linear-gradient(rgba(176,38,255,0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(176,38,255,0.045) 1px, transparent 1px),
+      linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 100%);
+    background-size: 34px 34px, 34px 34px, 100% 100%;
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  /* ============ TÍTULO NEÓN ============ */
+  h1.neon-title {
+    font-size: clamp(1.5rem, 4vw, 2.4rem);
+    letter-spacing: 2px;
+    margin: 8px 0 4px;
+    color: #fff;
+    text-shadow:
+      0 0 6px var(--violet),
+      0 0 18px rgba(176,38,255,0.7),
+      0 0 40px rgba(0,240,255,0.35);
+    animation: flicker 6s infinite steps(1);
+  }
+  @keyframes flicker {
+    0%, 92%, 96%, 100% { opacity: 1; }
+    93% { opacity: 0.86; }
+    95% { opacity: 0.92; }
+  }
+  .subtitle { color: var(--text-dim); margin: 0 0 14px; font-size: .95rem; }
+
+  /* Leyenda fija BACK/FRONT */
+  .leyenda {
+    display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: rgba(18,10,36,0.85);
+    box-shadow: 0 0 12px rgba(176,38,255,0.18) inset;
+    position: sticky; top: 8px; z-index: 40;
+    backdrop-filter: blur(4px);
+    margin-bottom: 16px;
+  }
+  .leyenda strong { font-size: .85rem; letter-spacing: 1px; }
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-weight: bold;
+    font-size: .78rem;
+    letter-spacing: 1px;
+    padding: 2px 9px;
+    border-radius: 6px;
+    border: 1px solid currentColor;
+  }
+  .tag.back  { color: var(--magenta); text-shadow: 0 0 8px rgba(255,43,214,0.6); box-shadow: 0 0 8px rgba(255,43,214,0.35); }
+  .tag.front { color: var(--cyan);    text-shadow: 0 0 8px rgba(0,240,255,0.6);  box-shadow: 0 0 8px rgba(0,240,255,0.35); }
+  .tag.none  { color: var(--text-dim); }
+  .leyenda .nota { color: var(--text-dim); font-size: .8rem; }
+
+  /* ============ BARRA DE HERRAMIENTAS ============ */
+  .toolbar {
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    margin-bottom: 14px;
+  }
+  button {
+    font-family: var(--sans);
+    font-size: .95rem;
+    color: var(--text);
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 16px;
+    cursor: pointer;
+    transition: box-shadow .15s ease, border-color .15s ease, transform .05s ease;
+  }
+  button:hover {
+    border-color: var(--violet);
+    box-shadow: 0 0 10px rgba(176,38,255,0.55), 0 0 22px rgba(176,38,255,0.25);
+  }
+  button:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+    box-shadow: 0 0 12px rgba(0,240,255,0.6);
+  }
+  button:active { transform: translateY(1px); }
+
+  button.seg { padding: 8px 13px; font-size: .88rem; }
+  button.seg[aria-pressed="true"] {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 10px rgba(0,240,255,0.5);
+  }
+  button.seg[data-lado="BACK"][aria-pressed="true"] {
+    border-color: var(--magenta); color: var(--magenta);
+    box-shadow: 0 0 10px rgba(255,43,214,0.5);
+  }
+
+  .searchbox { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .searchbox label { font-size: .85rem; color: var(--text-dim); }
+  input[type="text"], input[type="search"] {
+    font-family: var(--mono);
+    font-size: .95rem;
+    color: var(--text);
+    background: #0c0718;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 12px;
+    min-width: 180px;
+  }
+  input:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 1px;
+    box-shadow: 0 0 10px rgba(0,240,255,0.5);
+  }
+  kbd {
+    font-family: var(--mono); font-size: .75rem;
+    border: 1px solid var(--border); border-radius: 5px;
+    padding: 1px 6px; background: var(--panel2); color: var(--yellow);
+  }
+
+  /* ============ ÁRBOL ============ */
+  .arbol-zona {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 16px;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .arbol-zona { grid-template-columns: 1fr; }
+  }
+
+  .arbol-panel {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(12,7,24,0.9);
+    box-shadow: 0 0 18px rgba(176,38,255,0.12);
+    padding: 14px;
+    overflow-x: auto;
+  }
+  ul.arbol, ul.arbol ul {
+    list-style: none;
+    margin: 0;
+    padding-left: 0;
+    font-family: var(--mono);
+    font-size: .92rem;
+  }
+  ul.arbol ul { padding-left: 20px; }
+
+  li.nodo { position: relative; }
+  .linea {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: 7px;
+    cursor: pointer;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .linea:hover { background: rgba(176,38,255,0.12); }
+  .linea:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: -2px;
+  }
+  .linea.sel {
+    background: rgba(0,240,255,0.10);
+    border-color: rgba(0,240,255,0.45);
+  }
+  .rama { color: #4d3f73; user-select: none; }
+  .flecha {
+    display: inline-block; width: 1em; text-align: center;
+    color: var(--violet); user-select: none;
+    transition: transform .12s ease;
+  }
+  li.carpeta > .linea .flecha { transform: rotate(90deg); }
+  li.carpeta.cerrada > .linea .flecha { transform: rotate(0deg); }
+  li.carpeta.cerrada > ul { display: none; }
+
+  .nombre-carpeta { color: var(--yellow); font-weight: bold; }
+  .nombre-archivo { color: var(--text); }
+  .hint { color: var(--text-dim); font-size: .78rem; margin-left: 8px; white-space: normal; }
+  .mini-tag { font-size: .68rem; padding: 0 6px; border-radius: 5px; border: 1px solid currentColor; }
+  .mini-tag.back  { color: var(--magenta); }
+  .mini-tag.front { color: var(--cyan); }
+
+  mark.hit {
+    background: rgba(255,242,0,0.28);
+    color: var(--yellow);
+    border-radius: 3px;
+    padding: 0 1px;
+    text-shadow: 0 0 6px rgba(255,242,0,0.5);
+  }
+
+  .oculto-filtro { display: none !important; }
+
+  /* ============ PANEL DE DETALLE ============ */
+  .detalle {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(18,10,36,0.92);
+    box-shadow: 0 0 18px rgba(0,240,255,0.10);
+    padding: 16px;
+    position: sticky;
+    top: 74px;
+    min-height: 220px;
+  }
+  @media (max-width: 860px) { .detalle { position: static; } }
+  .detalle h2 {
+    margin: 0 0 10px;
+    font-size: 1.05rem;
+    color: #fff;
+    text-shadow: 0 0 8px rgba(0,240,255,0.5);
+    word-break: break-all;
+  }
+  .detalle .vacio-msg { color: var(--text-dim); font-size: .9rem; }
+  .campo { margin-bottom: 12px; }
+  .campo .etiqueta {
+    display: block; font-size: .74rem; letter-spacing: 1.5px;
+    color: var(--text-dim); text-transform: uppercase; margin-bottom: 3px;
+  }
+  .ruta-caja {
+    display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap;
+  }
+  .ruta-txt {
+    font-family: var(--mono);
+    font-size: .9rem;
+    color: var(--cyan);
+    background: #0a0616;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    flex: 1 1 200px;
+    word-break: break-all;
+  }
+  button.copiar {
+    color: var(--green);
+    border-color: rgba(57,255,20,0.5);
+    background: #0b1408;
+    font-weight: bold;
+    box-shadow: 0 0 8px rgba(57,255,20,0.25);
+  }
+  button.copiar:hover {
+    border-color: var(--green);
+    box-shadow: 0 0 14px rgba(57,255,20,0.6), 0 0 30px rgba(57,255,20,0.25);
+  }
+  .contenido-txt { font-size: .92rem; color: var(--text); }
+  .tema-chip {
+    display: inline-block;
+    font-size: .82rem;
+    color: var(--violet);
+    border: 1px solid rgba(176,38,255,0.55);
+    background: rgba(176,38,255,0.10);
+    border-radius: 20px;
+    padding: 2px 12px;
+  }
+  .origen-txt { font-size: .88rem; color: var(--text-dim); font-style: italic; }
+
+  /* Aviso flotante "¡Copiado!" */
+  #aviso {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #07120a;
+    color: var(--green);
+    border: 1px solid var(--green);
+    border-radius: 10px;
+    padding: 10px 26px;
+    font-weight: bold;
+    font-size: 1rem;
+    box-shadow: 0 0 16px rgba(57,255,20,0.65), 0 0 40px rgba(57,255,20,0.3);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+    z-index: 100;
+  }
+  #aviso.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ============ LISTAS INFERIORES ============ */
+  section.info {
+    margin-top: 26px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(12,7,24,0.88);
+    padding: 16px 18px;
+    box-shadow: 0 0 14px rgba(176,38,255,0.10);
+  }
+  section.info h2 {
+    margin: 0 0 10px;
+    font-size: 1.05rem;
+    color: #fff;
+    text-shadow: 0 0 8px rgba(255,43,214,0.45);
+  }
+  section.info ul.lista-texto {
+    list-style: none; margin: 0; padding: 0;
+  }
+  section.info ul.lista-texto li {
+    padding: 6px 0 6px 22px;
+    position: relative;
+    border-bottom: 1px dashed rgba(77,63,115,0.4);
+    font-size: .92rem;
+  }
+  section.info ul.lista-texto li:last-child { border-bottom: none; }
+  section.info ul.lista-texto li::before {
+    content: "▸";
+    position: absolute; left: 2px;
+    color: var(--violet);
+  }
+  section.info code {
+    font-family: var(--mono);
+    font-size: .86rem;
+    color: var(--cyan);
+    background: #0a0616;
+    border-radius: 5px;
+    padding: 1px 6px;
+  }
+  section.info .b-back  { color: var(--magenta); font-weight: bold; }
+  section.info .b-front { color: var(--cyan); font-weight: bold; }
+
+  footer.pie {
+    margin-top: 30px; text-align: center;
+    color: var(--text-dim); font-size: .78rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    h1.neon-title { animation: none; }
+    *, *::before, *::after { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1 class="neon-title">⚡ SÚPER ARCHIVO DAI ⚡</h1>
+  <p class="subtitle">Distribución de archivos — mega-apunte-dai · 5ª Informática · Pío IX</p>
+
+  <!-- Leyenda fija: colores que significan SIEMPRE lo mismo -->
+  <div class="leyenda" role="note" aria-label="Leyenda de colores">
+    <span><strong class="tag back">BACK</strong> = Node + Express + Socket.IO (magenta)</span>
+    <span><strong class="tag front">FRONT</strong> = Next.js App Router (cyan)</span>
+    <span class="nota">Estos dos colores significan siempre lo mismo en toda la app.</span>
+  </div>
+
+  <!-- Barra de herramientas -->
+  <div class="toolbar">
+    <button id="btnExpandir" type="button">📂 Expandir todo</button>
+    <button id="btnContraer" type="button">📁 Contraer todo</button>
+    <span role="group" aria-label="Filtro por lado">
+      <button class="seg" data-filtro="TODO" aria-pressed="true" type="button">Todo</button>
+      <button class="seg" data-filtro="BACK" data-lado="BACK" aria-pressed="false" type="button">Solo BACK</button>
+      <button class="seg" data-filtro="FRONT" aria-pressed="false" type="button">Solo FRONT</button>
+    </span>
+    <span class="searchbox">
+      <label for="buscador">Buscar:</label>
+      <input type="search" id="buscador" placeholder="nombre de archivo… ( / )" autocomplete="off">
+    </span>
+  </div>
+
+  <!-- Árbol + panel de detalle -->
+  <div class="arbol-zona">
+    <div class="arbol-panel">
+      <ul class="arbol" id="arbol" role="tree" aria-label="Árbol de archivos del proyecto"></ul>
+    </div>
+    <aside class="detalle" id="detalle" aria-live="polite">
+      <h2>Detalle</h2>
+      <p class="vacio-msg">👈 Hacé clic en un archivo o carpeta del árbol para ver su ruta, lado, contenido, tema y origen.</p>
+    </aside>
+  </div>
+
+  <!-- Listas inferiores (las genera el motor desde las constantes) -->
+  <section class="info" id="seccionDondeVa"></section>
+  <section class="info" id="seccionResumen"></section>
+
+  <footer class="pie">Funciona sin internet, con doble clic. Etapa 1: solo Distribución de archivos. (Teoría y Generadores llegan en las próximas etapas.)</footer>
+</div>
+
+<!-- Aviso "¡Copiado!" -->
+<div id="aviso" role="status" aria-live="assertive">✅ ¡Copiado!</div>
+
+<script>
+// =====================================================================
+// ======================  DATOS DE LA APLICACIÓN  =====================
+// =====================================================================
+
+// ===== AGREGAR ACÁ =====  (Etapa 2: const TEORIA · Etapa 3/4: const GENERADORES)
+
+// ---------- ÁRBOL ----------
+// lado: "BACK" | "FRONT" | null (sin lado). origen: ver textos al pie.
+const ARBOL = {
+  nombre: "mega-apunte-dai/", tipo: "carpeta", ruta: "", desc: "Raíz del proyecto de repaso.",
+  hijos: [
+    { nombre: "README.md", tipo: "archivo", lado: null,
+      contiene: "Cómo abrir el proyecto (dos terminales) y orden para estudiar.",
+      tema: null, origen: "creas" },
+    { nombre: "backend/", tipo: "carpeta", lado: "BACK",
+      desc: "BACK: Node + Express + Socket.IO, puerto 4000.",
+      hijos: [
+        { nombre: ".gitignore", tipo: "archivo", lado: "BACK",
+          contiene: "Excluye node_modules/, .env y build/.",
+          tema: null, origen: "creas" },
+        { nombre: "index.js", tipo: "archivo", lado: "BACK",
+          contiene: "El servidor: express, cors, express-session, socket.io. Endpoints GET /saludo, GET y POST /estudiantes, PUT y DELETE /estudiantes/:id. Eventos de socket: joinRoom, pingAll, sendMessage, eventoPersonalizado (responde respuestaPersonalizada) y disconnect. Puerto process.env.PORT o 4000. CORS para localhost:3000 y 3001.",
+          tema: ["Fetch en NextJS y Métodos de Array", "WebSockets y uso del hook useSocket en React"], origen: "creas" },
+        { nombre: "package.json", tipo: "archivo", lado: "BACK",
+          contiene: "Dependencias cors, express, express-session, socket.io; scripts start (node index.js) y dev (nodemon index.js).",
+          tema: null, origen: "creas" },
+        { nombre: "package-lock.json", tipo: "archivo", lado: "BACK",
+          contiene: "Versiones exactas de las dependencias.",
+          tema: null, origen: "generaSolo" },
+        { nombre: "README.md", tipo: "archivo", lado: "BACK",
+          contiene: "Explicación del backend.",
+          tema: null, origen: "creas" }
+      ]
+    },
+    { nombre: "frontend/", tipo: "carpeta", lado: "FRONT",
+      desc: "FRONT: Next.js, App Router, puerto 3000.",
+      hijos: [
+        { nombre: ".gitignore", tipo: "archivo", lado: "FRONT",
+          contiene: "Excluye node_modules, .next y .env*.",
+          tema: null, origen: "generaCNA" },
+        { nombre: "eslint.config.mjs", tipo: "archivo", lado: "FRONT",
+          contiene: "Reglas de ESLint.",
+          tema: null, origen: "generaCNA" },
+        { nombre: "jsconfig.json", tipo: "archivo", lado: "FRONT",
+          contiene: "Alias @/* que apunta a ./src/* (por eso se escribe import Button from \"@/components/Button\").",
+          tema: "Creación de componentes básicos en NextJS", origen: "generaCNA" },
+        { nombre: "next.config.mjs", tipo: "archivo", lado: "FRONT",
+          contiene: "Configuración de Next.js (vacía por defecto).",
+          tema: null, origen: "generaCNA" },
+        { nombre: "package.json", tipo: "archivo", lado: "FRONT",
+          contiene: "Dependencias next, react, react-dom, socket.io-client y clsx; scripts dev, build, start y lint.",
+          tema: null, origen: "generaCNA" },
+        { nombre: "package-lock.json", tipo: "archivo", lado: "FRONT",
+          contiene: "Versiones exactas de las dependencias.",
+          tema: null, origen: "generaSolo" },
+        { nombre: "README.md", tipo: "archivo", lado: "FRONT",
+          contiene: "Explicación del frontend.",
+          tema: null, origen: "creas" },
+        { nombre: "public/", tipo: "carpeta", lado: "FRONT",
+          desc: "Imágenes y archivos estáticos (carpeta vacía en este proyecto).",
+          hijos: [] },
+        { nombre: "src/", tipo: "carpeta", lado: "FRONT",
+          desc: "Código fuente del front.",
+          hijos: [
+            { nombre: "app/", tipo: "carpeta", lado: "FRONT",
+              desc: "Cada carpeta con un page.js adentro es una RUTA.",
+              hijos: [
+                { nombre: "favicon.ico", tipo: "archivo", lado: "FRONT",
+                  contiene: "Ícono de la pestaña.", tema: null, origen: "generaCNA" },
+                { nombre: "layout.js", tipo: "archivo", lado: "FRONT",
+                  contiene: "Layout raíz: html, body, Navbar y {children}, más metadata.",
+                  tema: "Creación de componentes básicos en NextJS", origen: "generaCNAEdita" },
+                { nombre: "page.js", tipo: "archivo", lado: "FRONT",
+                  contiene: "Ruta \"/\" con el índice de temas.",
+                  tema: null, origen: "generaCNAEdita" },
+                { nombre: "teoria/", tipo: "carpeta", lado: "FRONT", desc: "Ruta /teoria.", hijos: [
+                  { nombre: "page.js", tipo: "archivo", lado: "FRONT",
+                    contiene: "Ruta /teoria con conceptos (React, MVC, DOM Virtual, Next.js).",
+                    tema: null, origen: "creas" }
+                ]},
+                { nombre: "login/", tipo: "carpeta", lado: "FRONT", desc: "Ruta /login.", hijos: [
+                  { nombre: "page.js", tipo: "archivo", lado: "FRONT",
+                    contiene: "Ruta /login; usa el componente compuesto Form.",
+                    tema: "Creación de componentes compuestos en React", origen: "creas" }
+                ]},
+                { nombre: "home/", tipo: "carpeta", lado: "FRONT", desc: "Ruta /home.", hijos: [
+                  { nombre: "page.js", tipo: "archivo", lado: "FRONT",
+                    contiene: "Ruta /home; reutiliza Form con otras props.",
+                    tema: "Creación de componentes compuestos en React", origen: "creas" }
+                ]},
+                { nombre: "contador/", tipo: "carpeta", lado: "FRONT", desc: "Ruta /contador.", hijos: [
+                  { nombre: "page.js", tipo: "archivo", lado: "FRONT",
+                    contiene: "Ruta /contador; useState y useEffect, con \"use client\".",
+                    tema: "React hooks, objeto Event y Conditional Rendering", origen: "creas" }
+                ]},
+                { nombre: "eventos/", tipo: "carpeta", lado: "FRONT", desc: "Ruta /eventos.", hijos: [
+                  { nombre: "page.js", tipo: "archivo", lado: "FRONT",
+                    contiene: "Ruta /eventos; objeto Event (event.target.value).",
+                    tema: "React hooks, objeto Event y Conditional Rendering", origen: "creas" }
+                ]},
+                { nombre: "condicional/", tipo: "carpeta", lado: "FRONT", desc: "Ruta /condicional.", hijos: [
+                  { nombre: "page.js", tipo: "archivo", lado: "FRONT",
+                    contiene: "Ruta /condicional; las tres formas: &&, ternario y función con if.",
+                    tema: "React hooks, objeto Event y Conditional Rendering", origen: "creas" }
+                ]},
+                { nombre: "fetch/", tipo: "carpeta", lado: "FRONT", desc: "Ruta /fetch.", hijos: [
+                  { nombre: "page.js", tipo: "archivo", lado: "FRONT",
+                    contiene: "Ruta /fetch; fetch GET, POST, PUT y DELETE más map, filter, find, some, every y forEach (apunta a http://localhost:4000).",
+                    tema: "Fetch en NextJS y Métodos de Array", origen: "creas" }
+                ]},
+                { nombre: "router/", tipo: "carpeta", lado: "FRONT", desc: "Ruta /router.", hijos: [
+                  { nombre: "page.js", tipo: "archivo", lado: "FRONT",
+                    contiene: "Ruta /router; Link y useRouter (push, back, forward, replace, refresh).",
+                    tema: "Router en NextJS", origen: "creas" },
+                  { nombre: "destino/", tipo: "carpeta", lado: "FRONT", desc: "Ruta /router/destino.", hijos: [
+                    { nombre: "page.js", tipo: "archivo", lado: "FRONT",
+                      contiene: "Ruta /router/destino; lee parámetros con useSearchParams.",
+                      tema: "Router en NextJS", origen: "creas" }
+                  ]}
+                ]},
+                { nombre: "socket/", tipo: "carpeta", lado: "FRONT", desc: "Ruta /socket.", hijos: [
+                  { nombre: "page.js", tipo: "archivo", lado: "FRONT",
+                    contiene: "Ruta /socket; usa useSocket, socket.emit y socket.on.",
+                    tema: "WebSockets y uso del hook useSocket en React", origen: "creas" }
+                ]}
+              ]
+            },
+            { nombre: "components/", tipo: "carpeta", lado: "FRONT",
+              desc: "Componentes reutilizables, en PascalCase.",
+              hijos: [
+                { nombre: "Title.js", tipo: "archivo", lado: "FRONT",
+                  contiene: "Componente simple, sin \"use client\": recibe text y devuelve un h1.",
+                  tema: "Creación de componentes básicos en NextJS", origen: "creas" },
+                { nombre: "Button.js", tipo: "archivo", lado: "FRONT",
+                  contiene: "Componente con \"use client\": props text y onClick.",
+                  tema: "Creación de componentes básicos en NextJS", origen: "creas" },
+                { nombre: "Form.js", tipo: "archivo", lado: "FRONT",
+                  contiene: "Componente COMPUESTO: combina Title, inputs y Button (props title, buttonText y onButtonClick).",
+                  tema: "Creación de componentes compuestos en React", origen: "creas" },
+                { nombre: "Navbar.js", tipo: "archivo", lado: "FRONT",
+                  contiene: "Menú con Link y un array de temas recorrido con map.",
+                  tema: "Router en NextJS", origen: "creas" }
+              ]
+            },
+            { nombre: "hooks/", tipo: "carpeta", lado: "FRONT",
+              desc: "Hooks propios, empiezan con use.",
+              hijos: [
+                { nombre: "useSocket.js", tipo: "archivo", lado: "FRONT",
+                  contiene: "Hook propio de conexión a Socket.IO; devuelve { socket, isConnected }; serverUrl por defecto ws://localhost:4000.",
+                  tema: "WebSockets y uso del hook useSocket en React", origen: "creas" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+// Origen: código interno -> texto mostrado en el panel
+const ORIGEN_TEXTO = {
+  creas: "lo creás vos",
+  generaCNA: "lo genera create-next-app",
+  generaCNAEdita: "lo genera create-next-app (se edita)",
+  generaSolo: "se genera solo (no tocar)"
+};
+
+// ---------- ¿DÓNDE VA CADA COSA? ----------
+// { t: texto normal, c: código mono, b: etiqueta BACK/FRONT coloreada }
+const DONDE_VA = [
+  [{t:"Una página (ruta nueva): "},{c:"frontend/src/app/<ruta>/page.js"},{t:". La carpeta se llama como la ruta."}],
+  [{t:"Un layout: "},{c:"frontend/src/app/<ruta>/layout.js"},{t:". El raíz es "},{c:"frontend/src/app/layout.js"},{t:"."}],
+  [{t:"Un componente reutilizable: "},{c:"frontend/src/components/Nombre.js"},{t:", en PascalCase."}],
+  [{t:"Un hook propio: "},{c:"frontend/src/hooks/useAlgo.js"},{t:"."}],
+  [{t:"El servidor (endpoints y sockets): "},{c:"backend/index.js"},{t:"."}],
+  [{t:"El alias "},{c:"@/"},{t:" apunta a "},{c:"frontend/src/"},{t:" (definido en jsconfig.json)."}],
+  [{t:"Las dependencias del front se instalan con "},{c:"npm i"},{t:" dentro de "},{c:"frontend/"},{t:"."}],
+  [{t:"Las dependencias del back se instalan con "},{c:"npm i"},{t:" dentro de "},{c:"backend/"},{t:"."}]
+];
+
+// ---------- RESUMEN BACK VS FRONT ----------
+const RESUMEN_BF = [
+  [{t:"Componentes básicos y compuestos: nada en el "},{b:"BACK"},{t:". En el "},{b:"FRONT"},{t:": "},{c:"src/components/*.js"},{t:" y "},{c:"src/app/<ruta>/page.js"},{t:"."}],
+  [{t:"Hooks, Event y Conditional Rendering: nada en el "},{b:"BACK"},{t:". Todo en el "},{b:"FRONT"},{t:", con "},{c:"\"use client\""},{t:"."}],
+  [{t:"Fetch y métodos de Array: en el "},{b:"BACK"},{t:", "},{c:"backend/index.js"},{t:" con los endpoints GET/POST/PUT/DELETE, "},{c:"cors()"},{t:" y "},{c:"express.json()"},{t:". En el "},{b:"FRONT"},{t:", "},{c:"fetch(...)"},{t:" dentro de "},{c:"useEffect"},{t:" o de handlers."}],
+  [{t:"Router: nada en el "},{b:"BACK"},{t:". En el "},{b:"FRONT"},{t:", "},{c:"useRouter"},{t:", "},{c:"useSearchParams"},{t:" y "},{c:"Link"},{t:" (desde "},{c:"next/navigation"},{t:" y "},{c:"next/link"},{t:")."}],
+  [{t:"WebSockets: en el "},{b:"BACK"},{t:", "},{c:"backend/index.js"},{t:" con socket.io, sesiones y eventos. En el "},{b:"FRONT"},{t:", "},{c:"src/hooks/useSocket.js"},{t:" más "},{c:"socket.emit"},{t:" y "},{c:"socket.on"},{t:" en las páginas."}]
+];
+
+// =====================================================================
+// =============================  MOTOR  ===============================
+// (genérico: solo lee las constantes de arriba. No toca en etapas.)
+// =====================================================================
+(function () {
+  "use strict";
+
+  // ---------- utilidades ----------
+  function $(sel) { return document.querySelector(sel); }
+
+  function crearElem(tag, clases, texto) {
+    const el = document.createElement(tag);
+    if (clases) el.className = clases;
+    if (texto !== undefined && texto !== null) el.textContent = texto; // NUNCA innerHTML
+    return el;
+  }
+
+  // Copiar con fallback (navigator.clipboard puede fallar en file://)
+  let avisoTimer = null;
+  function mostrarAviso(msg) {
+    const aviso = $("#aviso");
+    aviso.textContent = msg;
+    aviso.classList.add("visible");
+    if (avisoTimer) clearTimeout(avisoTimer);
+    avisoTimer = setTimeout(function () { aviso.classList.remove("visible"); }, 1500);
+  }
+
+  function copiarTexto(txt) {
+    function fallback() {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = txt;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        mostrarAviso(ok ? "✅ ¡Copiado!" : "⚠️ No se pudo copiar");
+      } catch (e) {
+        mostrarAviso("⚠️ No se pudo copiar");
+      }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(function () {
+        mostrarAviso("✅ ¡Copiado!");
+      }).catch(fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  // ---------- cálculo de rutas completas ----------
+  function calcularRutas(nodo, prefijo) {
+    nodo.rutaCompleta = prefijo + nodo.nombre;
+    if (nodo.hijos) {
+      for (let i = 0; i < nodo.hijos.length; i++) {
+        calcularRutas(nodo.hijos[i], nodo.rutaCompleta);
+      }
+    }
+  }
+  calcularRutas(ARBOL, "");
+
+  // ---------- estado ----------
+  let filtroLado = "TODO";     // TODO | BACK | FRONT
+  let busqueda = "";
+  let seleccionado = null;
+
+  function ladoEfectivo(nodo) {
+    if (nodo.lado) return nodo.lado;
+    return null;
+  }
+
+  function coincideBusqueda(nodo) {
+    if (!busqueda) return true;
+    return nodo.nombre.toLowerCase().indexOf(busqueda) !== -1;
+  }
+
+  function pasaFiltro(nodo) {
+    if (filtroLado === "TODO") return true;
+    if (nodo.lado === filtroLado) return true;
+    // una carpeta pasa si algún descendiente tiene ese lado
+    if (nodo.hijos) {
+      for (let i = 0; i < nodo.hijos.length; i++) {
+        if (pasaFiltro(nodo.hijos[i])) return true;
+      }
+    }
+    return false;
+  }
+
+  function hijoConLado(nodo, lado) {
+    if (nodo.lado === lado) return true;
+    if (nodo.hijos) {
+      for (let i = 0; i < nodo.hijos.length; i++) {
+        if (hijoConLado(nodo.hijos[i], lado)) return true;
+      }
+    }
+    return false;
+  }
+
+  // ---------- render del árbol ----------
+  const arbolUl = $("#arbol");
+
+  function construirLinea(nodo, esRaiz) {
+    const li = crearElem("li", "nodo " + (nodo.hijos ? "carpeta" : "archivo"));
+    li.dataset.ruta = nodo.rutaCompleta;
+
+    const linea = crearElem("div", "linea");
+    linea.tabIndex = 0;
+    linea.setAttribute("role", "treeitem");
+
+    // ramas decorativas (solo con filtro TODO y sin búsqueda activa no importa: siempre se muestran)
+    if (!esRaiz) {
+      linea.appendChild(crearElem("span", "rama", nodo._prefijoVisual));
+    }
+
+    if (nodo.hijos) {
+      linea.appendChild(crearElem("span", "flecha", "▶"));
+    }
+
+    // nombre con resaltado de búsqueda
+    const nombreSpan = crearElem("span", nodo.hijos ? "nombre-carpeta" : "nombre-archivo");
+    aplicarResaltado(nombreSpan, nodo.nombre);
+    linea.appendChild(nombreSpan);
+
+    // mini tag de lado en carpetas principales
+    if (nodo.lado === "BACK")  linea.appendChild(crearElem("span", "mini-tag back", "BACK"));
+    if (nodo.lado === "FRONT") linea.appendChild(crearElem("span", "mini-tag front", "FRONT"));
+
+    if (nodo.desc) linea.appendChild(crearElem("span", "hint", "— " + nodo.desc));
+
+    linea.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      seleccionar(nodo, linea);
+      if (nodo.hijos) toggleCarpeta(li);
+    });
+    linea.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter" || ev.key === " ") {
+        ev.preventDefault();
+        seleccionar(nodo, linea);
+        if (nodo.hijos) toggleCarpeta(li);
+      }
+    });
+
+    li.appendChild(linea);
+
+    if (nodo.hijos) {
+      const ul = crearElem("ul");
+      ul.setAttribute("role", "group");
+      dibujarHijos(nodo, ul);
+      li.appendChild(ul);
+    }
+    return li;
+  }
+
+  function aplicarResaltado(span, texto) {
+    // resalta por nombre usando textContent + fragmentos (sin innerHTML)
+    if (!busqueda) { span.textContent = texto; return; }
+    const idx = texto.toLowerCase().indexOf(busqueda);
+    if (idx === -1) { span.textContent = texto; return; }
+    span.textContent = "";
+    span.appendChild(document.createTextNode(texto.slice(0, idx)));
+    const m = crearElem("mark", "hit", texto.slice(idx, idx + busqueda.length));
+    span.appendChild(m);
+    span.appendChild(document.createTextNode(texto.slice(idx + busqueda.length)));
+  }
+
+  function toggleCarpeta(li) {
+    li.classList.toggle("cerrada");
+  }
+
+  function prefijoHijo(base, i, total) {
+    // base: cadena de prefijo visual del padre (ej. "│   ")
+    const ultima = (i === total - 1);
+    return base + (ultima ? "└── " : "├── ");
+  }
+
+  function prefijoBase(base, i, total) {
+    const ultima = (i === total - 1);
+    return base + (ultima ? "    " : "│   ");
+  }
+
+  function dibujarHijos(nodoPadre, ul) {
+    ul.textContent = "";
+    const visibles = [];
+    for (let i = 0; i < nodoPadre.hijos.length; i++) {
+      const h = nodoPadre.hijos[i];
+      if (!pasaFiltro(h)) continue;
+      visibles.push(h);
+    }
+    for (let i = 0; i < visibles.length; i++) {
+      const h = visibles[i];
+      h._prefijoVisual = prefijoHijo(nodoPadre._prefijoVisual || "", i, visibles.length);
+      const li = construirLinea(h, false);
+      if (!coincideBusqueda(h) && h.hijos && !contieneCoincidencia(h)) {
+        li.classList.add("oculto-filtro");
+      }
+      ul.appendChild(li);
+      if (h.hijos) {
+        h._prefijoVisual = prefijoBase(nodoPadre._prefijoVisual || "", i, visibles.length);
+        dibujarHijos(h, li.querySelector("ul"));
+      }
+    }
+  }
+
+  function contieneCoincidencia(nodo) {
+    if (coincideBusqueda(nodo)) {
+      if (!nodo.hijos) return true;
+    }
+    if (nodo.hijos) {
+      for (let i = 0; i < nodo.hijos.length; i++) {
+        if (contieneCoincidencia(nodo.hijos[i])) return true;
+      }
+    }
+    return coincideBusqueda(nodo);
+  }
+
+  function renderArbol() {
+    arbolUl.textContent = "";
+    ARBOL._prefijoVisual = "";
+    const li = construirLinea(ARBOL, true);
+    arbolUl.appendChild(li);
+    // re-aplicar selección visual si sigue existiendo
+    if (seleccionado) {
+      const sel = arbolUl.querySelector('[data-ruta="' + CSS.escape(seleccionado.rutaCompleta) + '"] .linea');
+      if (sel) sel.classList.add("sel");
+    }
+  }
+
+  // ---------- panel de detalle ----------
+  const detalle = $("#detalle");
+
+  function seleccionar(nodo, linea) {
+    seleccionado = nodo;
+    const prev = arbolUl.querySelector(".linea.sel");
+    if (prev) prev.classList.remove("sel");
+    if (linea) linea.classList.add("sel");
+    renderDetalle(nodo);
+  }
+
+  function renderDetalle(nodo) {
+    detalle.textContent = ""; // limpiar sin innerHTML
+
+    const esCarpeta = !!nodo.hijos;
+    const titulo = crearElem("h2", null, (esCarpeta ? "🗂️ " : "📄 ") + nodo.nombre);
+    detalle.appendChild(titulo);
+
+    // RUTA COMPLETA
+    const campoRuta = crearElem("div", "campo");
+    campoRuta.appendChild(crearElem("span", "etiqueta", "Ruta completa"));
+    const caja = crearElem("div", "ruta-caja");
+    const rutaTxt = crearElem("div", "ruta-txt", nodo.rutaCompleta || nodo.nombre);
+    caja.appendChild(rutaTxt);
+    const btnRuta = crearElem("button", "copiar", "📋 Copiar ruta");
+    btnRuta.type = "button";
+    btnRuta.addEventListener("click", function () {
+      copiarTexto(nodo.rutaCompleta || nodo.nombre); // se copia desde el string original
+    });
+    caja.appendChild(btnRuta);
+    campoRuta.appendChild(caja);
+    detalle.appendChild(campoRuta);
+
+    // LADO
+    const campoLado = crearElem("div", "campo");
+    campoLado.appendChild(crearElem("span", "etiqueta", "Lado"));
+    const lado = ladoEfectivo(nodo);
+    const tag = crearElem("span", "tag " + (lado === "BACK" ? "back" : lado === "FRONT" ? "front" : "none"),
+      lado ? lado : "SIN LADO");
+    campoLado.appendChild(tag);
+    detalle.appendChild(campoLado);
+
+    // QUÉ CONTIENE / DESCRIPCIÓN
+    const campoCont = crearElem("div", "campo");
+    campoCont.appendChild(crearElem("span", "etiqueta", esCarpeta ? "Qué es esta carpeta" : "Qué contiene"));
+    const texto = esCarpeta ? (nodo.desc || "Carpeta del proyecto.") : nodo.contiene;
+    campoCont.appendChild(crearElem("div", "contenido-txt", texto));
+    detalle.appendChild(campoCont);
+
+    // TEMA (solo archivos con tema)
+    if (!esCarpeta) {
+      const campoTema = crearElem("div", "campo");
+      campoTema.appendChild(crearElem("span", "etiqueta", "Tema (nombre del apunte)"));
+      if (nodo.tema) {
+        const temas = Array.isArray(nodo.tema) ? nodo.tema : [nodo.tema];
+        for (let i = 0; i < temas.length; i++) {
+          campoTema.appendChild(crearElem("span", "tema-chip", temas[i]));
+          if (i < temas.length - 1) campoTema.appendChild(document.createTextNode(" "));
+        }
+      } else {
+        campoTema.appendChild(crearElem("span", "origen-txt", "Sin tema específico."));
+      }
+      detalle.appendChild(campoTema);
+    }
+
+    // ORIGEN
+    if (!esCarpeta) {
+      const campoOrigen = crearElem("div", "campo");
+      campoOrigen.appendChild(crearElem("span", "etiqueta", "Origen"));
+      campoOrigen.appendChild(crearElem("div", "origen-txt", ORIGEN_TEXTO[nodo.origen] || "—"));
+      detalle.appendChild(campoOrigen);
+    }
+
+    // si es backend/ o frontend/, aclarar el puerto
+    if (nodo.nombre === "backend/") {
+      detalle.appendChild(crearElem("div", "origen-txt", "Puerto 4000 (process.env.PORT o 4000)."));
+    }
+    if (nodo.nombre === "frontend/") {
+      detalle.appendChild(crearElem("div", "origen-txt", "Puerto 3000 (npm run dev)."));
+    }
+  }
+
+  // ---------- listas inferiores ----------
+  function renderFragmentos(ul, fragmentos) {
+    const li = crearElem("li");
+    for (let i = 0; i < fragmentos.length; i++) {
+      const f = fragmentos[i];
+      if (f.t !== undefined) li.appendChild(document.createTextNode(f.t));
+      else if (f.c !== undefined) li.appendChild(crearElem("code", null, f.c));
+      else if (f.b !== undefined) li.appendChild(crearElem("span", f.b === "BACK" ? "b-back" : "b-front", f.b));
+    }
+    ul.appendChild(li);
+  }
+
+  function renderListas() {
+    const s1 = $("#seccionDondeVa");
+    s1.textContent = "";
+    s1.appendChild(crearElem("h2", null, "📌 ¿Dónde va cada cosa?"));
+    const u1 = crearElem("ul", "lista-texto");
+    DONDE_VA.forEach(function (frags) { renderFragmentos(u1, frags); });
+    s1.appendChild(u1);
+
+    const s2 = $("#seccionResumen");
+    s2.textContent = "";
+    s2.appendChild(crearElem("h2", null, "⚖️ Resumen BACK vs FRONT"));
+    const u2 = crearElem("ul", "lista-texto");
+    RESUMEN_BF.forEach(function (frags) { renderFragmentos(u2, frags); });
+    s2.appendChild(u2);
+  }
+
+  // ---------- controles ----------
+  $("#btnExpandir").addEventListener("click", function () {
+    const cerradas = arbolUl.querySelectorAll("li.carpeta.cerrada");
+    for (let i = 0; i < cerradas.length; i++) cerradas[i].classList.remove("cerrada");
+  });
+
+  $("#btnContraer").addEventListener("click", function () {
+    const carpetas = arbolUl.querySelectorAll("li.carpeta");
+    for (let i = 0; i < carpetas.length; i++) {
+      // no contraer la raíz ni src/ para que siga útil... en realidad: contraer todo menos raíz
+      if (!carpetas[i].dataset.ruta) continue; // raíz
+      if (carpetas[i].dataset.ruta === "mega-apunte-dai/frontend/src/" ||
+          carpetas[i].dataset.ruta === "mega-apunte-dai/mega" ) { /* noop */ }
+      carpetas[i].classList.add("cerrada");
+    }
+  });
+
+  const botonesFiltro = document.querySelectorAll("button.seg[data-filtro]");
+  for (let i = 0; i < botonesFiltro.length; i++) {
+    botonesFiltro[i].addEventListener("click", function () {
+      filtroLado = this.dataset.filtro;
+      for (let j = 0; j < botonesFiltro.length; j++) {
+        botonesFiltro[j].setAttribute("aria-pressed", String(botonesFiltro[j] === this));
+      }
+      renderArbol();
+    });
+  }
+
+  const buscador = $("#buscador");
+  buscador.addEventListener("input", function () {
+    busqueda = this.value.trim().toLowerCase();
+    renderArbol();
+    if (busqueda) {
+      // expandir todo para ver los resultados
+      const cerradas = arbolUl.querySelectorAll("li.carpeta.cerrada");
+      for (let i = 0; i < cerradas.length; i++) cerradas[i].classList.remove("cerrada");
+    }
+  });
+
+  // atajo "/" para enfocar el buscador
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "/" && document.activeElement !== buscador) {
+      ev.preventDefault();
+      buscador.focus();
+    }
+    if (ev.key === "Escape" && document.activeElement === buscador) {
+      buscador.value = "";
+      busqueda = "";
+      renderArbol();
+      buscador.blur();
+    }
+  });
+
+  // ---------- arranque ----------
+  renderListas();
+  renderArbol();
+})();
+</script>
+</body>
+</html>
