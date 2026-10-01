@@ -86,6 +86,23 @@
   .tag.back  { color: var(--magenta); text-shadow: 0 0 8px rgba(255,43,214,0.6); box-shadow: 0 0 8px rgba(255,43,214,0.35); }
   .tag.front { color: var(--cyan);    text-shadow: 0 0 8px rgba(0,240,255,0.6);  box-shadow: 0 0 8px rgba(0,240,255,0.35); }
   .tag.none  { color: var(--text-dim); }
+
+  /* Chips de lado (los mismos colores SIEMPRE: BACK magenta, FRONT cyan) */
+  .ch-chip {
+    display: inline-block;
+    font-family: var(--mono);
+    font-weight: bold;
+    font-size: .74rem;
+    letter-spacing: 1px;
+    padding: 2px 9px;
+    border-radius: 6px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+  }
+  .chip-back  { color: var(--magenta); background: rgba(255,43,214,0.08); }
+  .chip-front { color: var(--cyan);    background: rgba(0,240,255,0.07); }
+  .chip-nombre { color: var(--violet); background: rgba(176,38,255,0.10); font-weight: normal; }
+  .chip-clase  { color: var(--yellow); background: rgba(255,242,0,0.07); font-weight: normal; }
   .leyenda .nota { color: var(--text-dim); font-size: .8rem; }
 
   /* ============ BARRA DE HERRAMIENTAS ============ */
@@ -361,18 +378,39 @@
   section.pagina { display: none; }
   section.pagina.activa { display: block; }
 
-  /* ============ TEORÍA ============ */
+  /* ============ TEORÍA (un solo tema visible a la vez) ============ */
   .chips-temas { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
   button.chip-tema { padding: 7px 14px; font-size: .85rem; border-radius: 20px; }
   button.chip-tema[aria-pressed="true"] {
     border-color: var(--cyan); color: var(--cyan);
     box-shadow: 0 0 10px rgba(0,240,255,0.45);
   }
+  .teoria-indice {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    border: 1px solid var(--border); border-radius: 12px;
+    background: rgba(18,10,36,0.9); padding: 10px 14px; margin-bottom: 16px;
+  }
+  .teoria-indice select {
+    font-family: var(--sans); font-size: .92rem; color: var(--text);
+    background: #0c0718; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+    max-width: 100%;
+  }
+  .teoria-indice select:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .ti-pos { font-family: var(--mono); font-size: .82rem; color: var(--yellow); white-space: nowrap; }
+  .nav-pie {
+    display: flex; gap: 10px; flex-wrap: wrap; justify-content: space-between;
+    margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border);
+  }
+  .nav-pie button { font-size: .92rem; }
+  .nav-pie .np-izq { margin-right: auto; }
+  .nav-pie .np-der { margin-left: auto; }
+  .ir-arriba { color: var(--violet); }
   article.tema {
     border: 1px solid var(--border); border-radius: 12px;
     background: rgba(12,7,24,0.9); padding: 16px 18px; margin-bottom: 18px;
     box-shadow: 0 0 14px rgba(176,38,255,0.10);
   }
+  article.tema.oculto { display: none; }
   article.tema > h2 {
     margin: 0 0 4px; font-size: 1.12rem; color: #fff;
     text-shadow: 0 0 8px rgba(0,240,255,0.5);
@@ -414,11 +452,13 @@
     background: rgba(12,7,24,0.9); padding: 16px 18px; margin-bottom: 18px;
     box-shadow: 0 0 14px rgba(176,38,255,0.10);
   }
+  .gen.oculto { display: none; }
   .gen > h2 {
     margin: 0 0 4px; font-size: 1.08rem; color: #fff;
     text-shadow: 0 0 8px rgba(255,43,214,0.45);
   }
   .gen .gen-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 6px 0 10px; }
+  .gen .ch-ir-teoria { font-size: .78rem; padding: 2px 10px; }
   .gen .ruta-chip {
     font-family: var(--mono); font-size: .82rem; color: var(--yellow);
     background: #0a0616; border: 1px solid var(--border); border-radius: 7px;
@@ -451,10 +491,12 @@
     color: var(--yellow); border-radius: 9px; padding: 8px 12px; font-size: .86rem; margin-bottom: 14px;
   }
 
-  footer.pie {
-    margin-top: 30px; text-align: center;
-    color: var(--text-dim); font-size: .78rem;
+  footer.pie { margin-top: 30px; }
+  .pie-inner {
+    border: 1px solid var(--border); border-radius: 12px;
+    background: rgba(18,10,36,0.9); padding: 12px 14px 10px;
   }
+  .pie-nota { color: var(--text-dim); font-size: .78rem; margin: 8px 0 0; text-align: center; }
 
   @media (prefers-reduced-motion: reduce) {
     h1.neon-title { animation: none; }
@@ -514,12 +556,31 @@
   <section class="info" id="seccionDondeVa"></section>
   <section class="info" id="seccionResumen"></section>
 
+  <!-- Barra de navegación inferior (comparte .nav-pie con Teoría/Generador) -->
+  <nav class="nav-pie" aria-label="Navegación entre secciones">
+    <button type="button" data-ir-tab="tabDist" class="np-izq">⤒ Arriba</button>
+    <button type="button" data-ir-tab="tabTeoria">📖 Ir a Teoría →</button>
+    <button type="button" data-ir-tab="tabGen" class="np-der">⚙️ Ir a Generador →</button>
+  </nav>
+
   </section><!-- /paginaDist -->
 
   <!-- PESTAÑA TEORÍA: el motor la arma desde const TEORIA -->
   <section class="pagina" id="paginaTeoria" role="tabpanel" aria-labelledby="tabTeoria">
-    <div class="chips-temas" id="chipsTemas" role="group" aria-label="Ir a un tema"></div>
+    <div class="teoria-indice">
+      <label for="selTema">Tema:</label>
+      <select id="selTema"></select>
+      <span class="ti-pos" id="tiPos"></span>
+    </div>
+    <div class="chips-temas" id="chipsTemas" role="group" aria-label="Elegir tema de teoría"></div>
     <div id="teoriaCont"></div>
+    <nav class="nav-pie" aria-label="Navegación de temas y secciones">
+      <button type="button" id="btnTemaAnterior" class="np-izq">← Tema anterior</button>
+      <button type="button" data-ir-tab="tabDist">🗂️ Distribución</button>
+      <button type="button" id="btnArribaTeoria" class="ir-arriba">⤒ Arriba</button>
+      <button type="button" data-ir-tab="tabGen">⚙️ Generador</button>
+      <button type="button" id="btnTemaSiguiente" class="np-der">Tema siguiente →</button>
+    </nav>
   </section>
 
   <!-- PESTAÑA GENERADOR: el motor la arma desde const GENERADORES -->
@@ -535,10 +596,33 @@
       <label class="check" for="chkTp1"><input type="checkbox" id="chkTp1"><span>Modo TP1 (prohíbe map, filter y find; usa for, forEach y push)</span></label>
     </div>
     <div class="aviso-tp1" id="avisoTp1" hidden>⚠️ MODO TP1 ACTIVO: en los generadores que lo soportan se usan for, forEach y push en lugar de map, filter y find.</div>
+    <div class="teoria-indice">
+      <label for="selGen">Generador:</label>
+      <select id="selGen"></select>
+      <span class="ti-pos" id="genPos"></span>
+    </div>
+    <div class="chips-temas" id="chipsGens" role="group" aria-label="Elegir generador"></div>
     <div id="genCont"></div>
+    <nav class="nav-pie" aria-label="Navegación de generadores y secciones">
+      <button type="button" id="btnGenAnterior" class="np-izq">← Anterior</button>
+      <button type="button" data-ir-tab="tabDist">🗂️ Distribución</button>
+      <button type="button" id="btnArribaGen" class="ir-arriba">⤒ Arriba</button>
+      <button type="button" data-ir-tab="tabTeoria">📖 Teoría</button>
+      <button type="button" id="btnGenSiguiente" class="np-der">Siguiente →</button>
+    </nav>
   </section>
 
-  <footer class="pie">Funciona sin internet, con doble clic, desde un pendrive. Distribución + Teoría + Generadores (temas 1 a 8 y comandos).</footer>
+  <footer class="pie">
+    <div class="pie-inner">
+      <nav class="nav-pie" style="margin-top:0;padding-top:0;border-top:none" aria-label="Navegación general">
+        <button type="button" data-ir-tab="tabDist">🗂️ Distribución</button>
+        <button type="button" data-ir-tab="tabTeoria">📖 Teoría</button>
+        <button type="button" data-scroll-top="1">⤒ Subir al inicio</button>
+        <button type="button" data-ir-tab="tabGen">⚙️ Generador</button>
+      </nav>
+      <p class="pie-nota">Funciona sin internet, con doble clic, desde un pendrive. Distribución + Teoría + Generadores (temas 1 a 8 y comandos).</p>
+    </div>
+  </footer>
 </div>
 
 <!-- Aviso "¡Copiado!" -->
@@ -550,6 +634,9 @@
 // =====================================================================
 
 // ===== AGREGAR ACÁ =====  (Teoría: const TEORIA · Generadores: const GENERADORES)
+// Al final de la zona de datos, el motor arma自动生成 los índices de navegación
+// (const INDICE_TEORIA y const INDICE_GENS): botones para ir de un tema/generador
+// al siguiente, selector desplegable, barra del footer y botón "ver teoría" en cada generador.
 
 // ---------- ÁRBOL ----------
 // lado: "BACK" | "FRONT" | null (sin lado). origen: ver textos al pie.
