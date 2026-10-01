@@ -364,8 +364,23 @@
   section.info .b-back  { color: var(--magenta); font-weight: bold; }
   section.info .b-front { color: var(--cyan); font-weight: bold; }
 
+  /* ============ HEADER FIJO (siempre visible) ============ */
+  header.cabecera {
+    position: sticky; top: 0; z-index: 60;
+    background: rgba(9,5,18,0.97);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 2px 16px rgba(176,38,255,0.28);
+    padding: 8px 0 0;
+    margin-bottom: 14px;
+  }
+  .cab-inner { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+  .cab-titulo { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  header.cabecera h1.neon-title { font-size: clamp(1.1rem, 3vw, 1.5rem); margin: 0; letter-spacing: 1.5px; }
+  .cab-sub { color: var(--text-dim); font-size: .78rem; margin: 0; }
+  @media (max-width: 600px) { .cab-sub { display: none; } }
+
   /* ============ PESTAÑAS PRINCIPALES ============ */
-  nav.tabs { display: flex; gap: 10px; flex-wrap: wrap; margin: 4px 0 16px; }
+  nav.tabs { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0 0; }
   button.tab {
     font-size: 1rem; font-weight: bold; letter-spacing: 1px;
     padding: 11px 22px; border-radius: 11px;
@@ -476,6 +491,17 @@
   .gen-file { margin-bottom: 14px; }
   .gen-file-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 2px; }
   .btn-mini { padding: 5px 12px; font-size: .82rem; }
+  .gen-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 12px 0 4px; }
+  .btn-generar {
+    font-weight: bold; font-size: .98rem; padding: 10px 22px;
+    color: var(--green); border-color: rgba(57,255,20,0.6); background: #0b1408;
+    box-shadow: 0 0 10px rgba(57,255,20,0.3);
+  }
+  .btn-generar:hover { box-shadow: 0 0 16px rgba(57,255,20,0.6), 0 0 34px rgba(57,255,20,0.25); }
+  .gen-autogen { display: flex; align-items: center; gap: 6px; font-size: .86rem; color: var(--text-dim); text-transform: none; letter-spacing: 0; }
+  .gen-autogen input { accent-color: var(--green); width: auto; }
+  .gen-copiar-todo { color: var(--cyan); border-color: rgba(0,240,255,0.5); }
+  .sin-gen { border: 1px dashed rgba(169,164,192,0.5); border-radius: 10px; padding: 12px 14px; color: var(--text-dim); font-size: .92rem; }
   .global-bar {
     display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
     border: 1px solid var(--border); border-radius: 12px;
@@ -491,6 +517,7 @@
     color: var(--yellow); border-radius: 9px; padding: 8px 12px; font-size: .86rem; margin-bottom: 14px;
   }
 
+  .leyenda { position: static; }
   footer.pie { margin-top: 30px; }
   .pie-inner {
     border: 1px solid var(--border); border-radius: 12px;
@@ -505,17 +532,46 @@
 </style>
 </head>
 <body>
+<!-- HEADER FIJO: título + pestañas + puertos/nombre del servidor. Siempre visible al hacer scroll. -->
+<header class="cabecera">
+  <div class="cab-inner">
+    <div class="cab-titulo">
+      <h1 class="neon-title">⚡ SÚPER ARCHIVO DAI ⚡</h1>
+      <p class="cab-sub">Mega-apunte de DAI — 5ª Informática · Pío IX</p>
+    </div>
+
+    <!-- Pestañas principales (botones de navegación) -->
+    <nav class="tabs" role="tablist" aria-label="Secciones">
+      <button class="tab" id="tabDist" role="tab" aria-selected="true" aria-controls="paginaDist" type="button">🗂️ Distribución</button>
+      <button class="tab" id="tabTeoria" role="tab" aria-selected="false" aria-controls="paginaTeoria" type="button">📖 Teoría</button>
+      <button class="tab" id="tabGen" role="tab" aria-selected="false" aria-controls="paginaGen" type="button">⚙️ Generador</button>
+    </nav>
+
+    <!-- Opciones globales: puerto front, puerto back y nombre del servidor (las lee el Generador) -->
+    <div class="global-bar" id="opcionesGlobales" style="margin:10px 0 8px">
+      <span class="glabel">Opciones globales:</span>
+      <label for="inpPuertoFront">Puerto FRONT:</label>
+      <input type="number" id="inpPuertoFront" value="3000" min="1" max="65535" style="width:92px">
+      <label for="inpPuertoBack">Puerto BACK:</label>
+      <input type="number" id="inpPuertoBack" value="4000" min="1" max="65535" style="width:92px">
+      <label for="selNombreServ">Servidor:</label>
+      <select id="selNombreServ">
+        <option value="index.js" selected>index.js (TP2 y mi proyecto)</option>
+        <option value="app.js">app.js (apunte de fetch)</option>
+      </select>
+      <label for="selComillas">Comillas:</label>
+      <select id="selComillas">
+        <option value="d" selected>dobles "</option>
+        <option value="s">simples '</option>
+      </select>
+      <label class="check" for="chkComentarios"><input type="checkbox" id="chkComentarios" checked><span>Con comentarios</span></label>
+      <label class="check" for="chkTp1"><input type="checkbox" id="chkTp1"><span>Modo TP1 (prohíbe map, filter y find; usa for, forEach y push)</span></label>
+    </div>
+    <div class="aviso-tp1" id="avisoTp1" hidden style="margin-bottom:8px">⚠️ MODO TP1 ACTIVO: en los generadores que lo soportan se usan for, forEach y push en lugar de map, filter y find.</div>
+  </div>
+</header>
+
 <div class="wrap">
-
-  <h1 class="neon-title">⚡ SÚPER ARCHIVO DAI ⚡</h1>
-  <p class="subtitle">Mega-apunte de DAI — 5ª Informática · Pío IX</p>
-
-  <!-- Pestañas principales -->
-  <nav class="tabs" role="tablist" aria-label="Secciones">
-    <button class="tab" id="tabDist" role="tab" aria-selected="true" aria-controls="paginaDist" type="button">🗂️ Distribución</button>
-    <button class="tab" id="tabTeoria" role="tab" aria-selected="false" aria-controls="paginaTeoria" type="button">📖 Teoría</button>
-    <button class="tab" id="tabGen" role="tab" aria-selected="false" aria-controls="paginaGen" type="button">⚙️ Generador</button>
-  </nav>
 
   <section class="pagina activa" id="paginaDist" role="tabpanel" aria-labelledby="tabDist">
 
@@ -585,17 +641,7 @@
 
   <!-- PESTAÑA GENERADOR: el motor la arma desde const GENERADORES -->
   <section class="pagina" id="paginaGen" role="tabpanel" aria-labelledby="tabGen">
-    <div class="global-bar" id="opcionesGlobales">
-      <span class="glabel">Opciones globales:</span>
-      <label for="selComillas">Comillas:</label>
-      <select id="selComillas">
-        <option value="d" selected>dobles "</option>
-        <option value="s">simples '</option>
-      </select>
-      <label class="check" for="chkComentarios"><input type="checkbox" id="chkComentarios" checked><span>Con comentarios</span></label>
-      <label class="check" for="chkTp1"><input type="checkbox" id="chkTp1"><span>Modo TP1 (prohíbe map, filter y find; usa for, forEach y push)</span></label>
-    </div>
-    <div class="aviso-tp1" id="avisoTp1" hidden>⚠️ MODO TP1 ACTIVO: en los generadores que lo soportan se usan for, forEach y push en lugar de map, filter y find.</div>
+    <p class="nota" style="color:var(--text-dim);font-size:.82rem;margin:0 0 10px">Las opciones globales (puertos, nombre del servidor, comillas, comentarios y Modo TP1) están arriba, en la barra fija.</p>
     <div class="teoria-indice">
       <label for="selGen">Generador:</label>
       <select id="selGen"></select>
@@ -1805,6 +1851,13 @@ function gQ(opts) { return (opts.comillas === "s") ? "'" : "\""; }
 // de "...") intocables; JSX "..." -> '...'; JS "..." -> '...' si adentro no hay dobles.
 function aplicarComillas(code, q) {
   if (q !== "'") return code; // las dobles son el estilo base de todos los templates
+  // Las líneas de comentario no se tocan: ahí hay texto libre con comillas de todo tipo.
+  return code.split("\n").map(function (linea) {
+    if (/^\s*(\/\/|\/\*|\*)/.test(linea)) return linea;
+    return convertirLineaComillas(linea, q);
+  }).join("\n");
+}
+function convertirLineaComillas(code, q) {
   const partes = [];
   let i = 0;
   while (i < code.length) {
@@ -3056,28 +3109,6 @@ GEN.comandos = {
     }
     return o;
   }
-  function copiarTexto(txt, boton) {
-    function feedback(ok) {
-      const viejo = boton.textContent;
-      boton.textContent = ok ? "✓ Copiado" : "✗ No se pudo";
-      setTimeout(function () { boton.textContent = viejo; }, 1500);
-    }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(txt).then(function () { feedback(true); }, function () { fallbackCopiar(txt, feedback); });
-    } else { fallbackCopiar(txt, feedback); }
-  }
-  function fallbackCopiar(txt, cb) {
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = txt;
-      ta.style.position = "fixed"; ta.style.left = "-9999px";
-      document.body.appendChild(ta);
-      ta.focus(); ta.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(ta);
-      cb(ok);
-    } catch (e) { cb(false); }
-  }
   function renderGen(idGen, idsSel) {
     const g = GEN[idGen];
     const cuerpo = document.getElementById("genbody-" + idGen);
@@ -3095,7 +3126,7 @@ GEN.comandos = {
     for (let a = 0; a < archs.length; a++) {
       const f = archs[a];
       let code = f.code;
-      if (!o.comentarios) code = sinComentariosOpcionales(code, true);
+      code = sinComentariosOpcionales(code, o.comentarios);
       code = aplicarComillas(code, gQ(o));
       const ladoChip = f.lado ? '<span class="ch-chip chip-' + (f.lado === "BACK" ? "back" : "front") + '">' + esc(f.lado) + "</span>" : "";
       html += '<div class="gen-file">' +
